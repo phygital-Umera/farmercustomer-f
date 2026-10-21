@@ -30,9 +30,10 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
   onBack,
   onOpenCart,
 }) => {
-  const { addToCart, updateQuantity, getItemQuantity, addTadkaItem, items } = useCart();
+  const { addToCart, updateQuantity, getItemQuantity, updateProductWeight, addTadkaItem, items } = useCart();
+  const cartItem = items.find((i) => i.product.id === product.id);
   const [selectedWeight, setSelectedWeight] = useState<string>(
-    product.defaultWeight || product.weightOptions[0]?.weight || '1 kg'
+    cartItem?.selectedWeight || product.defaultWeight || product.weightOptions[0]?.weight || '1 kg'
   );
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
@@ -44,7 +45,8 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
 
   const currentPrice = activeWeightOption ? activeWeightOption.price : product.price;
   const currentMrp = activeWeightOption ? activeWeightOption.mrp : product.mrp;
-  const savings = currentMrp - currentPrice;
+  const currentCutPrice = activeWeightOption?.cutPrice ?? product.cutPrice;
+  const savings = (currentCutPrice && currentCutPrice > currentPrice ? currentCutPrice : currentMrp) - currentPrice;
   const currentQty = getItemQuantity(product.id, selectedWeight);
 
   const handleShare = () => {
@@ -165,10 +167,14 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
           </p>
 
           <div className="flex items-baseline gap-2 mt-2">
+            {currentCutPrice && currentCutPrice > 0 ? (
+              <span className="text-base sm:text-lg text-[#8a948c] line-through font-normal">
+                ₹{currentCutPrice.toLocaleString('en-IN')}
+              </span>
+            ) : null}
             <span className="text-2xl sm:text-3xl font-extrabold text-[#00450d] tracking-tight">
-              ₹{currentPrice}
+              ₹{currentPrice.toLocaleString('en-IN')}
             </span>
-          
           </div>
         </div>
 
@@ -213,7 +219,10 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
                 <button
                   key={opt.weight}
                   type="button"
-                  onClick={() => setSelectedWeight(opt.weight)}
+                  onClick={() => {
+                    setSelectedWeight(opt.weight);
+                    updateProductWeight(product.id, opt.weight, opt.price, opt.mrp);
+                  }}
                   className={`p-2 shrink-0 min-w-[130px] h-15 rounded-xl border text-left transition-all relative cursor-pointer ${
                     isSelected
                       ? 'bg-[#a0f399]/30 border-[#1b5e20] ring-1 ring-[#1b5e20] shadow-xs'
@@ -231,10 +240,14 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
                   </div>
 
                   <div className="flex items-baseline gap-1.5 mt-0.5">
+                    {opt.cutPrice && opt.cutPrice > 0 ? (
+                      <span className="text-xs text-[#8a948c] line-through font-normal">
+                        ₹{opt.cutPrice.toLocaleString('en-IN')}
+                      </span>
+                    ) : null}
                     <span className="font-black text-sm text-[#00450d]">
-                      ₹{opt.price}
+                      ₹{opt.price.toLocaleString('en-IN')}
                     </span>
-                   
                   </div>
 
                  
@@ -330,11 +343,17 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
               Selected: {selectedWeight}
             </span>
             <div className="flex items-baseline gap-1.5">
+              {currentCutPrice && currentCutPrice > 0 ? (
+                <span className="text-xs text-[#9eaaa0] line-through font-normal">
+                  ₹{currentCutPrice.toLocaleString('en-IN')}
+                </span>
+              ) : currentMrp > currentPrice ? (
+                <span className="text-xs text-[#9eaaa0] line-through font-normal">
+                  ₹{currentMrp.toLocaleString('en-IN')}
+                </span>
+              ) : null}
               <span className="text-xl font-black text-[#00450d]">
-                ₹{currentPrice}
-              </span>
-              <span className="text-xs text-[#9eaaa0] line-through">
-                ₹{currentMrp}
+                ₹{currentPrice.toLocaleString('en-IN')}
               </span>
             </div>
           </div>
@@ -343,29 +362,42 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
             {currentQty > 0 ? (
               <QuantityStepper
                 quantity={currentQty}
-                onIncrement={() =>
-                  updateQuantity(product.id, selectedWeight, 1)
-                }
-                onDecrement={() =>
-                  updateQuantity(product.id, selectedWeight, -1)
-                }
+                onIncrement={() => {
+                  const rawQty = activeWeightOption?.rawQty ?? (parseFloat(selectedWeight) || 1);
+                  const payload = {
+                    productId: product.id,
+                    price: currentPrice,
+                    productQuantity: rawQty,
+                    productCount: currentQty + 1,
+                  };
+                  console.log('🛒 Cart Item:', payload);
+                  updateQuantity(product.id, selectedWeight, 1);
+                }}
+                onDecrement={() => {
+                  const rawQty = activeWeightOption?.rawQty ?? (parseFloat(selectedWeight) || 1);
+                  const payload = {
+                    productId: product.id,
+                    price: currentPrice,
+                    productQuantity: rawQty,
+                    productCount: currentQty - 1,
+                  };
+                  console.log('🛒 Cart Item:', payload);
+                  updateQuantity(product.id, selectedWeight, -1);
+                }}
                 size="lg"
               />
             ) : (
               <button
                 type="button"
                 onClick={() => {
-                  console.log('🛒 [ItemDetails ADD TO CART CLICKED]:', {
+                  const rawQty = activeWeightOption?.rawQty ?? (parseFloat(selectedWeight) || 1);
+                  const payload = {
                     productId: product.id,
-                    productName: product.name,
-                    unit: product.unit,
-                    selectedWeight,
-                    selectedOption: activeWeightOption,
                     price: currentPrice,
-                    mrp: currentMrp,
-                    quantity: 1,
-                    fullProduct: product,
-                  });
+                    productQuantity: rawQty,
+                    productCount: 1,
+                  };
+                  console.log('🛒 Cart Item:', payload);
                   addToCart(product, selectedWeight, currentPrice, currentMrp);
                 }}
                 className="bg-[#00450d] hover:bg-[#1b5e20] text-white font-black text-sm px-2 py-2 rounded-xl flex items-center gap-2 transition-all active:scale-95 shadow-md cursor-pointer"

@@ -49,7 +49,12 @@ const SignIn: React.FC = () => {
   const onSubmit = async (values: SignInFormValues) => {
     const toastId = toast.loading('Logging in...');
     try {
-      const response = await signIn(values);
+        const payload={
+          ...values,
+          role:"CUSTOMER",
+        }
+
+      const response = await signIn(payload);
 
       const accessToken = response?.data?.accessToken || response?.accessToken;
       const refreshToken = response?.data?.refreshToken || response?.refreshToken;

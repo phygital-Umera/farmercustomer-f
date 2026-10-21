@@ -10,6 +10,7 @@ export interface ApiProductSelling {
   price: number;
   sellingPrice: number;
   margin?: number;
+  cutPrice?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -21,6 +22,7 @@ export interface ApiProduct {
   barcode?: string;
   unit?: unit | string;
   sellingPrice?: number;
+  cutPrice?: number;
   availableStock?: number;
   isOutOfStock?: boolean;
   cgst?: number;
@@ -285,23 +287,30 @@ export const mapApiProductToProduct = (apiProd: ApiProduct): Product => {
     weightOptions = sortedSelling.map((s) => {
       const price = Number(s.sellingPrice) || 0;
       const margin = Number(s.margin) || 10;
-      const mrp = Math.round(price * (1 + margin / 100));
+      const cutPrice = Number(s.cutPrice) || 0;
+      const mrp = cutPrice > 0 ? cutPrice : Math.round(price * (1 + margin / 100));
 
       return {
         weight: formatWeightQuantity(s.qty, apiProd.unit),
         price,
         mrp: mrp > price ? mrp : Math.round(price * 1.15),
+        cutPrice: cutPrice > 0 ? cutPrice : undefined,
+        rawQty: Number(s.qty) || 1,
         note: s.margin ? `Bachat ${s.margin}%` : undefined,
       };
     });
   } else {
     const basePrice = Number(apiProd.sellingPrice) || 0;
+    const baseCutPrice = Number(apiProd.cutPrice) || 0;
     const defaultLabel = getDefaultWeightLabel(apiProd.unit);
+    const mrp = baseCutPrice > 0 ? baseCutPrice : Math.round(basePrice * 1.15);
     weightOptions = [
       {
         weight: defaultLabel,
         price: basePrice,
-        mrp: Math.round(basePrice * 1.15),
+        mrp,
+        cutPrice: baseCutPrice > 0 ? baseCutPrice : undefined,
+        rawQty: 1,
       },
     ];
   }
@@ -311,7 +320,8 @@ export const mapApiProductToProduct = (apiProd: ApiProduct): Product => {
 
   const defaultWeight = defaultOption?.weight || getDefaultWeightLabel(apiProd.unit);
   const price = defaultOption?.price || Number(apiProd.sellingPrice) || 0;
-  const mrp = defaultOption?.mrp || Math.round(price * 1.15);
+  const cutPrice = defaultOption?.cutPrice ?? (Number(apiProd.cutPrice) > 0 ? Number(apiProd.cutPrice) : undefined);
+  const mrp = cutPrice ? cutPrice : (defaultOption?.mrp || Math.round(price * 1.15));
 
   const image =
     apiProd.images && apiProd.images.length > 0 && apiProd.images[0]
@@ -340,10 +350,15 @@ export const mapApiProductToProduct = (apiProd: ApiProduct): Product => {
     freshnessBadge: 'TAAZA HARVEST',
     certifiedBadge: getCertifiedBadgeByUnit(apiProd.unit),
     discountPercent:
-      mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 10,
+      cutPrice && cutPrice > price
+        ? Math.round(((cutPrice - price) / cutPrice) * 100)
+        : mrp > price
+        ? Math.round(((mrp - price) / mrp) * 100)
+        : 10,
     defaultWeight,
     price,
     mrp,
+    cutPrice,
     weightOptions,
     localMandiPrice: Math.round(price * 1.1),
     apnaMandiPrice: price,

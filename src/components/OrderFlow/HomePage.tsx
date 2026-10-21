@@ -14,7 +14,7 @@ interface HomePageProps {
 }
 
 export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart }) => {
-  const { addToCart, updateQuantity, getItemQuantity, items } = useCart();
+  const { addToCart, updateQuantity, getItemQuantity, updateProductWeight, items } = useCart();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedWeights, setSelectedWeights] = useState<Record<string, string>>({});
@@ -74,6 +74,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
   const handleSelectWeight = (productId: string, weight: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedWeights((prev) => ({ ...prev, [productId]: weight }));
+
+    const product = allProducts.find((p) => p.id === productId);
+    if (product) {
+      const option = product.weightOptions.find((w) => w.weight === weight);
+      const price = option ? option.price : product.price;
+      const mrp = option ? option.mrp : product.mrp;
+      updateProductWeight(productId, weight, price, mrp);
+    }
   };
 
   return (
@@ -123,13 +131,15 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
       {/* Product Grid */}
       <div className="px-4 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {filteredProducts.map((product) => {
+          const cartItem = items.find((i) => i.product.id === product.id);
           const currentWeight =
-            selectedWeights[product.id] || product.defaultWeight;
+            selectedWeights[product.id] || cartItem?.selectedWeight || product.defaultWeight;
           const currentOption =
             product.weightOptions.find((w) => w.weight === currentWeight) ||
             product.weightOptions[0];
           const activePrice = currentOption ? currentOption.price : product.price;
           const activeMrp = currentOption ? currentOption.mrp : product.mrp;
+          const activeCutPrice = currentOption?.cutPrice ?? product.cutPrice;
           const currentQty = getItemQuantity(product.id, currentWeight);
 
           return (
@@ -190,11 +200,15 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
                 {/* Price and Action Button */}
                 <div className="pt-1 flex items-center justify-between gap-1 mt-1">
                   <div>
-                    <div className="flex items-baseline gap-1.5">
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      {activeCutPrice && activeCutPrice > 0 ? (
+                        <span className="text-xs sm:text-xs text-[#8a948c] line-through font-normal">
+                          ₹{activeCutPrice.toLocaleString('en-IN')}
+                        </span>
+                      ) : null}
                       <span className="font-extrabold text-sm sm:text-base text-[#1a1c1a]">
-                        ₹{activePrice}
+                        ₹{activePrice.toLocaleString('en-IN')}
                       </span>
-                  
                     </div>
                   </div>
 
@@ -202,23 +216,25 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
                     <QuantityStepper
                       quantity={currentQty}
                       onIncrement={() => {
-                        console.log('🛒 [INCREMENT QUANTITY]:', {
+                        const rawQty = currentOption?.rawQty ?? (parseFloat(currentWeight) || 1);
+                        const payload = {
                           productId: product.id,
-                          productName: product.name,
-                          unit: product.unit,
-                          selectedWeight: currentWeight,
-                          newQuantity: currentQty + 1,
-                        });
+                          price: activePrice,
+                          productQuantity: rawQty,
+                          productCount: currentQty + 1,
+                        };
+                        console.log('🛒 Cart Item:', payload);
                         updateQuantity(product.id, currentWeight, 1);
                       }}
                       onDecrement={() => {
-                        console.log('🛒 [DECREMENT QUANTITY]:', {
+                        const rawQty = currentOption?.rawQty ?? (parseFloat(currentWeight) || 1);
+                        const payload = {
                           productId: product.id,
-                          productName: product.name,
-                          unit: product.unit,
-                          selectedWeight: currentWeight,
-                          newQuantity: currentQty - 1,
-                        });
+                          price: activePrice,
+                          productQuantity: rawQty,
+                          productCount: currentQty - 1,
+                        };
+                        console.log('🛒 Cart Item:', payload);
                         updateQuantity(product.id, currentWeight, -1);
                       }}
                       size="sm"
@@ -228,17 +244,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        console.log('🛒 [ADD TO CART CLICKED]:', {
+                        const rawQty = currentOption?.rawQty ?? (parseFloat(currentWeight) || 1);
+                        const payload = {
                           productId: product.id,
-                          productName: product.name,
-                          unit: product.unit,
-                          selectedWeight: currentWeight,
-                          selectedOption: currentOption,
                           price: activePrice,
-                          mrp: activeMrp,
-                          quantity: 1,
-                          fullProduct: product,
-                        });
+                          productQuantity: rawQty,
+                          productCount: 1,
+                        };
+                        console.log('🛒 Cart Item:', payload);
                         addToCart(product, currentWeight, activePrice, activeMrp);
                       }}
                       className="h-7 px-3 rounded-lg border-1.5 border-[#2e7d32] bg-white hover:bg-[#e8f5e9] text-[#2e7d32] font-black text-xs uppercase tracking-wider transition-all active:scale-95 shadow-2xs cursor-pointer"

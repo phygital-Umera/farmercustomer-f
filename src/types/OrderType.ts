@@ -14,8 +14,17 @@ export interface WeightOption {
   weight: string; // e.g. "250 g", "500 g", "1 kg", "2 kg"
   price: number;
   mrp: number;
+  cutPrice?: number;
+  rawQty?: number; // Exact numerical quantity e.g. 100, 500.5, 1
   note?: string; // e.g. "Chhota Parivar (1 Din)", "Sabse Popular Choice"
   isPopular?: boolean;
+}
+
+export interface CartItemApiPayload {
+  productId: string;
+  price?: number;
+  productQuantity: number;
+  productCount: number;
 }
 
 export interface TadkaItem {
@@ -44,6 +53,7 @@ export interface Product {
   defaultWeight: string; // e.g. "1 kg"
   price: number;
   mrp: number;
+  cutPrice?: number;
   weightOptions: WeightOption[];
   localMandiPrice: number; // e.g. 40 (for Mandi Bhav Muqabla)
   apnaMandiPrice: number; // e.g. 35
@@ -69,7 +79,7 @@ export type PaymentMethod = 'cod' | 'upi' | 'card';
 
 export type ActiveTab = 'home' | 'categories' | 'offers' | 'cart' | 'orders';
 
-export type ViewState = 
+export type ViewState =
   | { type: 'home' }
   | { type: 'cart' }
   | { type: 'orders' }
@@ -106,4 +116,85 @@ export interface Order {
     pincode: string;
     city: string;
   };
+}
+
+export interface ApiOrderItem {
+  id: string;
+  orderId: string;
+  productId: string;
+  productName: string;
+  price: number;
+  productQuantity: number;
+  productCount: number;
+  totalQuantity: number;
+  subtotal: number;
+  cgst?: number;
+  sgst?: number;
+  taxAmount: number;
+  totalPrice: number;
+  createdAt: string;
+  updatedAt?: string;
+  image?: string;
+}
+
+export interface ApiAdminUser {
+  fullname: string;
+  phoneNumber: string;
+}
+
+export interface ApiAdmin {
+  id: string;
+  userId?: string;
+  user?: ApiAdminUser;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  logo?: string | null;
+  coverImage?: string | null;
+  [key: string]: any;
+}
+
+export interface ApiDeliveryBoy {
+  id: string;
+  name?: string;
+  phone?: string;
+  [key: string]: any;
+}
+
+export interface ApiOrder {
+  id: string;
+  orderNo: string;
+  customerId: string;
+  adminId: string;
+  deliveryBoyId: string | null;
+  subtotal: number;
+  totalTax: number;
+  grandTotal: number;
+  status: 'PENDING' | 'PACKED' | 'ASSIGNED' | 'DISPATCHED' | 'DELIVERED' | 'COMPLETED' | 'CANCELLED' | string;
+  packedAt: string | null;
+  assignedAt: string | null;
+  dispatchedAt: string | null;
+  deliveredAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items: ApiOrderItem[];
+  admin?: ApiAdmin;
+  deliveryBoy?: ApiDeliveryBoy | null;
+}
+
+export interface ApiOrdersResponse {
+  statusCode: number;
+  status: boolean;
+  message: string;
+  data: {
+    orders: ApiOrder[];
+    pagination?: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+  errors?: any;
 }

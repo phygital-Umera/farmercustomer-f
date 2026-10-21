@@ -1,21 +1,19 @@
 import React from 'react';
-import { ArrowRight, ShoppingBag } from 'lucide-react';
+import { ArrowRight, ShoppingBag, Loader2 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuthContext } from '@/context/AuthContext';
 import { useNavigate } from '@tanstack/react-router';
+import { useAddToCart } from '@/lib/api and mutation/cart/useCart';
 
 interface FloatingCartDockProps {
   onViewCart: () => void;
 }
 
 export const FloatingCartDock: React.FC<FloatingCartDockProps> = ({ onViewCart }) => {
-
-  const {user , isAuthenticated} = useAuthContext()
-  console.log(user, "userrr")
-  console.log(isAuthenticated , "is auth")
-  
-   const { totalItemCount, finalToPay, items } = useCart();
-   const navigate = useNavigate()
+  const { user, isAuthenticated } = useAuthContext();
+  const { totalItemCount, finalToPay, items, getApiCartItems } = useCart();
+  const { mutate: addToCartApi, isPending } = useAddToCart();
+  const navigate = useNavigate();
 
   if (totalItemCount === 0) return null;
 
@@ -63,11 +61,32 @@ export const FloatingCartDock: React.FC<FloatingCartDockProps> = ({ onViewCart }
           {isAuthenticated ? (
             <button
               type="button"
-              onClick={onViewCart}
-              className="bg-[#a0f399] hover:bg-[#8ee886] text-[#00450d] font-bold text-xs sm:text-sm px-3.5 py-2 rounded-xl flex items-center gap-1 shrink-0 transition-transform active:scale-95 shadow-sm cursor-pointer"
+              disabled={isPending}
+              onClick={() => {
+                const cartItems = getApiCartItems();
+                const payload = {
+                  items: cartItems,
+                };
+                console.log('🛒 Submitting Cart to API:', payload);
+                addToCartApi(payload, {
+                  onSuccess: () => {
+                    onViewCart();
+                  },
+                });
+              }}
+              className="bg-[#a0f399] hover:bg-[#8ee886] disabled:opacity-60 disabled:cursor-not-allowed text-[#00450d] font-bold text-xs sm:text-sm px-3.5 py-2 rounded-xl flex items-center gap-1.5 shrink-0 transition-transform active:scale-95 shadow-sm cursor-pointer"
             >
-              <span>Add Cart</span>
-              <ArrowRight size={15} strokeWidth={2.5} />
+              {isPending ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" />
+                  <span>Adding...</span>
+                </>
+              ) : (
+                <>
+                  <span>Add Cart</span>
+                  <ArrowRight size={15} strokeWidth={2.5} />
+                </>
+              )}
             </button>
           ) : (
             <button

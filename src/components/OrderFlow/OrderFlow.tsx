@@ -3,120 +3,41 @@ import { CartProvider, useCart } from '@/context/CartContext';
 import { Header } from './Header';
 import { BottomNavigation } from './BottomNavigation';
 import { HomePage } from './HomePage';
-import { CartPage } from './CartPage';
-import { ItemDetails } from './ItemDetails';
 import { FloatingCartDock } from './FloatingCartDock';
-import { OrderSuccessModal } from './OrderSuccessModal';
 import { AddressModal } from './AddressModal';
 import { CategoriesModal } from './CategoriesModal';
 import { OffersModal } from './OffersModal';
-import { OrdersPage } from './OrderPage';
-import { OrderDetailsPage } from './OrderDetails';
-// import { mockProducts } from '@/data/mockProducts';
 import { useGetAllProducts } from '@/lib/api and mutation/product/useProductApi';
 import { mapApiProductToProduct } from '@/utils/productMapper';
-import { ViewState, ActiveTab, Order, Product } from '@/types/OrderType';
+import { ActiveTab, Order, Product } from '@/types/OrderType';
 import { Phone, Sparkles, X, ChevronRight, Package, MapPin, Tag } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
 
 const OrderFlowContent: React.FC = () => {
-  const [viewState, setViewState] = useState<ViewState>(() => {
-    // Check initial hash for deep links
-    const hash = typeof window !== 'undefined' ? window.location.hash : '';
-    if (hash.startsWith('#product-')) {
-      return { type: 'product_detail', productId: hash.replace('#product-', '') };
-    }
-    if (hash.startsWith('#order-')) {
-      return { type: 'order_detail', orderId: hash.replace('#order-', '') };
-    }
-    if (hash === '#cart') return { type: 'cart' };
-    if (hash === '#orders') return { type: 'orders' };
-    return { type: 'home' };
-  });
+  const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showCategoriesModal, setShowCategoriesModal] = useState(false);
   const [showOffersModal, setShowOffersModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
 
-  const { orderPlaced, setOrderPlaced, address, repeatOrder, latestOrderId } = useCart();
-
-  // Navigate with browser history support
-  const navigateTo = useCallback((nextState: ViewState, push = true) => {
-    setViewState(nextState);
-
-    // Sync active tab
-    if (nextState.type === 'home') setActiveTab('home');
-    else if (nextState.type === 'cart') setActiveTab('cart');
-    else if (nextState.type === 'orders') setActiveTab('orders');
-
-    // Update URL hash for deep linking
-    let hash = '';
-    if (nextState.type === 'cart') hash = '#cart';
-    else if (nextState.type === 'orders') hash = '#orders';
-    else if (nextState.type === 'product_detail') hash = `#product-${nextState.productId}`;
-    else if (nextState.type === 'order_detail') hash = `#order-${nextState.orderId}`;
-
-    if (push && typeof window !== 'undefined') {
-      window.history.pushState(nextState, '', hash || window.location.pathname);
-    }
-
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, []);
-
-  // Listen to browser Back / Forward buttons
-  useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
-      if (e.state && typeof e.state === 'object' && 'type' in e.state) {
-        navigateTo(e.state as ViewState, false);
-      } else {
-        navigateTo({ type: 'home' }, false);
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [navigateTo]);
+  const { address, repeatOrder } = useCart();
 
   // Bottom Navigation tab selection
   const handleSelectTab = (tab: ActiveTab) => {
-    if (tab === 'home') {
-      navigateTo({ type: 'home' });
-    } else if (tab === 'cart') {
-      navigateTo({ type: 'cart' });
-    } else if (tab === 'orders') {
-      navigateTo({ type: 'orders' });
-    } else if (tab === 'categories') {
-      setShowCategoriesModal(true);
-    } else if (tab === 'offers') {
-      setShowOffersModal(true);
-    }
+    if (tab === 'home') navigate({ to: '/' });
+    else if (tab === 'cart') navigate({ to: '/cart' });
+    else if (tab === 'orders') navigate({ to: '/orders' });
+    else if (tab === 'categories') setShowCategoriesModal(true);
+    else if (tab === 'offers') setShowOffersModal(true);
   };
 
   const handleSelectProduct = (productId: string) => {
     setShowCategoriesModal(false);
-    navigateTo({ type: 'product_detail', productId });
+    navigate({ to: '/product/$productId', params: { productId } });
   };
 
-  const handleOpenCart = () => {
-    navigateTo({ type: 'cart' });
-  };
-
-  const handleRepeatOrder = (order: Order) => {
-    repeatOrder(order);
-    navigateTo({ type: 'cart' });
-  };
-
-  const handleOrderSuccessClose = () => {
-    setOrderPlaced(false);
-    if (latestOrderId) {
-      navigateTo({ type: 'order_detail', orderId: latestOrderId });
-    } else {
-      navigateTo({ type: 'orders' });
-    }
-  };
+  const handleOpenCart = () => navigate({ to: '/cart' });
 
   const { data: productsData } = useGetAllProducts();
 
@@ -129,104 +50,31 @@ const OrderFlowContent: React.FC = () => {
     if (Array.isArray(apiList) && apiList.length > 0) {
       return apiList.map(mapApiProductToProduct);
     }
-    // return mockProducts;
     return [];
   }, [productsData]);
 
-  // Find currently viewed product if in product_detail view
-  const currentProduct =
-    viewState.type === 'product_detail'
-      ? allProducts.find((p) => p.id === viewState.productId) || allProducts[0]
-      : null;
-
   return (
     <div className="min-h-screen bg-[#fcf9f8] text-[#1b1c1c] font-sans antialiased selection:bg-[#2e7d32]/20">
-      {/* Top Header - Shown on Home and Cart */}
-      {(viewState.type === 'home' || viewState.type === 'cart') && (
-        <Header
-          onOpenAddress={() => setShowAddressModal(true)}
-          onOpenProfile={() => setShowProfileModal(true)}
-        />
-      )}
+      {/* Top Header */}
+      <Header
+        onOpenAddress={() => setShowAddressModal(true)}
+        onOpenProfile={() => setShowProfileModal(true)}
+      />
 
       {/* Main Content Area */}
       <main className="max-w-2xl mx-auto min-h-screen relative shadow-2xs bg-[#fcf9f8]">
-        {viewState.type === 'home' && (
-          <>
-            <HomePage
-              onSelectProduct={handleSelectProduct}
-              onOpenCart={handleOpenCart}
-            />
-            <FloatingCartDock onViewCart={handleOpenCart} />
-            <BottomNavigation
-              activeTab={activeTab}
-              onSelectTab={handleSelectTab}
-            />
-          </>
-        )}
-
-        {viewState.type === 'product_detail' && currentProduct && (
-          <ItemDetails
-            product={currentProduct}
-            onBack={() => {
-              if (window.history.length > 1) {
-                window.history.back();
-              } else {
-                navigateTo({ type: 'home' });
-              }
-            }}
-            onOpenCart={handleOpenCart}
-          />
-        )}
-
-        {viewState.type === 'cart' && (
-          <>
-            <CartPage
-              onBack={() => {
-                if (window.history.length > 1) {
-                  window.history.back();
-                } else {
-                  navigateTo({ type: 'home' });
-                }
-              }}
-              onOpenAddressModal={() => setShowAddressModal(true)}
-              onPlaceOrder={() => setOrderPlaced(true)}
-            />
-            <BottomNavigation
-              activeTab="cart"
-              onSelectTab={handleSelectTab}
-            />
-          </>
-        )}
-
-        {viewState.type === 'orders' && (
-          <>
-            <OrdersPage
-              onBack={() => navigateTo({ type: 'home' })}
-              onViewOrderDetails={(id) => navigateTo({ type: 'order_detail', orderId: id })}
-              onGoToShop={() => navigateTo({ type: 'home' })}
-            />
-            <BottomNavigation
-              activeTab="orders"
-              onSelectTab={handleSelectTab}
-            />
-          </>
-        )}
-
-        {viewState.type === 'order_detail' && (
-          <OrderDetailsPage
-            orderId={viewState.orderId}
-            onBack={() => navigateTo({ type: 'orders' })}
-            onRepeatOrder={handleRepeatOrder}
-          />
-        )}
+        <HomePage
+          onSelectProduct={handleSelectProduct}
+          onOpenCart={handleOpenCart}
+        />
+        <FloatingCartDock onViewCart={handleOpenCart} />
+        <BottomNavigation
+          activeTab="home"
+          onSelectTab={handleSelectTab}
+        />
       </main>
 
-      {/* Modals and Sheets */}
-      {orderPlaced && (
-        <OrderSuccessModal onClose={handleOrderSuccessClose} />
-      )}
-
+      {/* Modals */}
       {showAddressModal && (
         <AddressModal onClose={() => setShowAddressModal(false)} />
       )}
@@ -288,7 +136,7 @@ const OrderFlowContent: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setShowProfileModal(false);
-                  navigateTo({ type: 'orders' });
+                  navigate({ to: '/orders' });
                 }}
                 className="w-full text-left p-2.5 rounded-xl hover:bg-gray-50 flex items-center justify-between border border-gray-100 cursor-pointer"
               >

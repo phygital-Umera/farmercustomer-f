@@ -18,7 +18,8 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { Order } from '@/types/OrderType';
+import { Order, ApiOrder } from '@/types/OrderType';
+import { useGetOrder } from '@/lib/api and mutation/Order/useOrder';
 
 interface OrderDetailsPageProps {
   orderId: string;
@@ -32,10 +33,77 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
   onRepeatOrder,
 }) => {
   const { getOrderById } = useCart();
+  const { data: apiOrderData } = useGetOrder();
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [showHelpAlert, setShowHelpAlert] = useState(false);
 
-  const order = getOrderById(orderId);
+  const localOrder = getOrderById(orderId);
+
+  const order: Order | undefined = React.useMemo(() => {
+    if (localOrder) return localOrder;
+    if (!apiOrderData) return undefined;
+
+    const raw = apiOrderData as any;
+    const list: ApiOrder[] = Array.isArray(raw?.data?.orders)
+      ? raw.data.orders
+      : Array.isArray(raw?.orders)
+      ? raw.orders
+      : Array.isArray(raw?.data)
+      ? raw.data
+      : [];
+
+    const found = list.find((o) => o.id === orderId || o.orderNo === orderId);
+    if (!found) return undefined;
+
+    const formattedDate = (() => {
+      try {
+        return new Date(found.createdAt).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        });
+      } catch {
+        return found.createdAt;
+      }
+    })();
+
+    const isDelivered =
+      found.status?.toUpperCase() === 'DELIVERED' ||
+      found.status?.toUpperCase() === 'COMPLETED';
+
+    return {
+      id: `#${(found.orderNo || found.id).slice(0, 8).toUpperCase()}`,
+      status: isDelivered ? 'delivered' : 'live',
+      placedAt: formattedDate,
+      items: found.items.map((i) => ({
+        name: i.productName.charAt(0).toUpperCase() + i.productName.slice(1),
+        image: i.image || '',
+        weight: i.totalQuantity ? `${i.totalQuantity} kg` : `${i.productQuantity} kg`,
+        quantity: i.productCount || 1,
+        price: Number(i.totalPrice ?? i.subtotal),
+        mrp: Number(i.totalPrice ?? i.subtotal),
+      })),
+      itemsTotal: Number(found.subtotal),
+      discountTotal: 0,
+      deliveryCharge: 0,
+      totalPaid: Number(found.grandTotal),
+      savingsTotal: 0,
+      paymentMethod: 'cod',
+      deliveryInstruction: 'ring_bell',
+      riderName: found.deliveryBoy?.name,
+      riderPhone: found.deliveryBoy?.phone,
+      deliveryAddress: {
+        label: 'Ghar Tak / Home',
+        flat: found.admin?.user?.fullname ? `Store: ${found.admin.user.fullname}` : 'Online Delivery',
+        landmark: 'Digital Kaata Verified',
+        pincode: '',
+        city: '',
+      },
+    };
+  }, [localOrder, apiOrderData, orderId]);
 
   if (!order) {
     return (

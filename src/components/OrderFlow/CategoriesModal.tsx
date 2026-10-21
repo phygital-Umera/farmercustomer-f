@@ -123,8 +123,13 @@ export const CategoriesModal: React.FC<CategoriesModalProps> = ({
                         <p className="font-bold text-xs text-[#1b1c1c] truncate group-hover:text-[#00450d]">
                           {prod.name}
                         </p>
-                        <p className="text-[11px] text-[#1b5e20] font-bold">
-                          ₹{prod.price}
+                        <p className="text-[11px] text-[#1b5e20] font-bold flex items-baseline gap-1">
+                          {prod.cutPrice && prod.cutPrice > 0 ? (
+                            <span className="text-[10px] text-gray-400 line-through font-normal">
+                              ₹{prod.cutPrice.toLocaleString('en-IN')}
+                            </span>
+                          ) : null}
+                          <span>₹{prod.price.toLocaleString('en-IN')}</span>
                         </p>
                       </div>
                       <ChevronRight size={14} className="text-gray-400 group-hover:text-[#1b5e20]" />

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Sprout, ChevronDown, User, MapPin } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useGetAddress } from '@/lib/api and mutation/Order/useAdress';
 
 interface HeaderProps {
   onOpenAddress?: () => void;
@@ -8,7 +9,64 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onOpenAddress, onOpenProfile }) => {
-  const { address } = useCart();
+  const { address, setAddress } = useCart();
+  const { data: addressResponse } = useGetAddress();
+
+  // Safely extract address list from API
+  const addressList = useMemo(() => {
+    if (!addressResponse) return [];
+    const resData = (addressResponse as any)?.data;
+    if (Array.isArray(resData?.data)) return resData.data;
+    if (Array.isArray(resData)) return resData;
+    if (Array.isArray(addressResponse)) return addressResponse;
+    return [];
+  }, [addressResponse]);
+
+  // If no address selected in CartContext yet, auto-select first saved address from API
+  useEffect(() => {
+    if ((!address?.id || !address?.flat) && addressList.length > 0) {
+      const first = addressList[0];
+      setAddress({
+        id: first.id,
+        label: 'Saved Address',
+        flat: first.address,
+        landmark: first.landmark,
+        pincode: first.pincode,
+        city: (first as any).city || '',
+        contactNo: first.contactNo,
+      });
+    }
+  }, [addressList, address?.id, address?.flat, setAddress]);
+
+  // Format the selected address label for display
+  const displayAddress = useMemo(() => {
+    // If flat/street address is available
+    if (address?.flat) {
+      const parts = [address.flat, address.landmark].filter(Boolean).join(', ');
+      return address.pincode ? `${parts} (${address.pincode})` : parts;
+    }
+
+    // If landmark is available
+    if (address?.landmark) {
+      return address.pincode ? `${address.landmark} (${address.pincode})` : address.landmark;
+    }
+
+    // Fallback to first address in list if context hasn't updated yet
+    if (addressList.length > 0) {
+      const first = addressList[0];
+      const parts = [first.address, first.landmark].filter(Boolean).join(', ');
+      return first.pincode ? `${parts} (${first.pincode})` : parts;
+    }
+
+    if (address?.city && address?.pincode) {
+      return `${address.city} ${address.pincode}`;
+    }
+    if (address?.pincode) {
+      return `Pincode: ${address.pincode}`;
+    }
+
+    return 'Select Location';
+  }, [address, addressList]);
 
   return (
     <header className="sticky top-0 z-40 bg-[#fcf9f8]/95 backdrop-blur-md px-4 pt-3 pb-2 border-b border-black/[0.04]">
@@ -27,10 +85,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddress, onOpenProfile }) 
             type="button"
             onClick={onOpenAddress}
             className="flex items-center gap-1 text-[12px] sm:text-[13px] text-[#41493e] hover:text-[#00450d] transition-colors mt-0.5 text-left cursor-pointer group"
+            title={displayAddress}
           >
             <MapPin size={12} className="text-[#1b5e20] shrink-0" />
             <span className="font-medium truncate max-w-[210px] sm:max-w-xs">
-              Deliver to: <span className="text-[#1b1c1c] font-semibold">{address.city} {address.pincode}</span> (10-15 mins)
+              Deliver to: <span className="text-[#1b1c1c] font-semibold">{displayAddress}</span> (10-15 mins)
             </span>
             <ChevronDown size={13} className="text-[#41493e] group-hover:translate-y-0.5 transition-transform shrink-0" />
           </button>

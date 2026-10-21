@@ -1,23 +1,27 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 // import { mockProducts, commonTadkaItems } from '@/data/mockProducts';
-import { CartItem, Product, DeliveryInstruction, PaymentMethod, TadkaItem, Order } from '@/types/OrderType';
+import { CartItem, Product, DeliveryInstruction, PaymentMethod, TadkaItem, Order, CartItemApiPayload } from '@/types/OrderType';
 
-interface DeliveryAddress {
+export interface DeliveryAddress {
+  id?: string;
   label: string;
   flat: string;
   landmark: string;
   pincode: string;
   city: string;
+  contactNo?: string;
 }
 
 interface CartContextType {
   items: CartItem[];
   addToCart: (product: Product, selectedWeight?: string, customPrice?: number, customMrp?: number) => void;
+  updateProductWeight: (productId: string, newWeight: string, newPrice?: number, newMrp?: number) => void;
   addTadkaItem: (item: TadkaItem) => void;
   updateQuantity: (productId: string, selectedWeight: string, delta: number) => void;
   removeFromCart: (productId: string, selectedWeight: string) => void;
   clearCart: () => void;
   getItemQuantity: (productId: string, selectedWeight?: string) => number;
+  getApiCartItems: () => CartItemApiPayload[];
   totalItemCount: number;
   itemsTotal: number;
   discountTotal: number;
@@ -59,11 +63,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [deliveryInstruction, setDeliveryInstruction] = useState<DeliveryInstruction>('ring_bell');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
   const [address, setAddress] = useState<DeliveryAddress>({
-    label: 'Ghar Tak / To Home',
-    flat: 'Flat 402, Gokul Dham',
-    landmark: 'MG Road',
-    pincode: '400001',
-    city: 'Mumbai',
+    id: '',
+    label: 'Delivery Location',
+    flat: '',
+    landmark: '',
+    pincode: '',
+    city: '',
+    contactNo: '',
   });
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [latestOrderId, setLatestOrderId] = useState('');
@@ -89,24 +95,29 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unitPrice = customPrice !== undefined ? customPrice : (weightOption ? weightOption.price : product.price);
     const unitMrp = customMrp !== undefined ? customMrp : (weightOption ? weightOption.mrp : product.mrp);
 
-    console.log('📦 [CartContext addToCart Payload]:', {
-      productId: product.id,
-      productName: product.name,
-      unit: product.unit,
-      selectedWeight: weightToUse,
-      weightOption,
-      unitPrice,
-      unitMrp,
-      product,
-    });
+    const productQuantity =
+      weightOption?.rawQty ?? (parseFloat(weightToUse) || 1);
 
     setItems((prev) => {
-      const existingIndex = prev.findIndex(
-        (i) => i.product.id === product.id && i.selectedWeight === weightToUse
-      );
+      const existingIndex = prev.findIndex((i) => i.product.id === product.id);
       if (existingIndex > -1) {
+        const existing = prev[existingIndex];
         const updated = [...prev];
-        updated[existingIndex].quantity += 1;
+        if (existing.selectedWeight === weightToUse) {
+          updated[existingIndex] = {
+            ...existing,
+            quantity: existing.quantity + 1,
+          };
+        } else {
+          // Different weight selected -> Replace existing weight variant in cart
+          updated[existingIndex] = {
+            ...existing,
+            selectedWeight: weightToUse,
+            unitPrice,
+            unitMrp,
+            quantity: existing.quantity > 0 ? existing.quantity : 1,
+          };
+        }
         return updated;
       } else {
         return [
@@ -120,6 +131,33 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           },
         ];
       }
+    });
+  };
+
+  const updateProductWeight = (
+    productId: string,
+    newWeight: string,
+    newPrice?: number,
+    newMrp?: number
+  ) => {
+    setItems((prev) => {
+      const existingIndex = prev.findIndex((i) => i.product.id === productId);
+      if (existingIndex === -1) {
+        return prev;
+      }
+      const existing = prev[existingIndex];
+      const option = existing.product.weightOptions.find((w) => w.weight === newWeight);
+      const unitPrice = newPrice !== undefined ? newPrice : (option ? option.price : existing.unitPrice);
+      const unitMrp = newMrp !== undefined ? newMrp : (option ? option.mrp : existing.unitMrp);
+
+      const updated = [...prev];
+      updated[existingIndex] = {
+        ...existing,
+        selectedWeight: newWeight,
+        unitPrice,
+        unitMrp,
+      };
+      return updated;
     });
   };
 
@@ -161,7 +199,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setItems((prev) => {
       return prev
         .map((item) => {
-          if (item.product.id === productId && item.selectedWeight === selectedWeight) {
+          if (item.product.id === productId && (item.selectedWeight === selectedWeight || !selectedWeight)) {
             const newQty = item.quantity + delta;
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }
@@ -171,10 +209,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const removeFromCart = (productId: string, selectedWeight: string) => {
+  const removeFromCart = (productId: string, selectedWeight?: string) => {
     setItems((prev) =>
       prev.filter(
-        (item) => !(item.product.id === productId && item.selectedWeight === selectedWeight)
+        (item) => !(item.product.id === productId && (selectedWeight ? item.selectedWeight === selectedWeight : true))
       )
     );
   };
@@ -213,24 +251,43 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // If items match exactly initial screenshot, enforce the ₹10 discount display
   const discountTotal = itemsTotal > 0 ? Math.max(10, rawDiscount) : 0;
 
-  const deliveryCharge = itemsTotal >= 49 ? 0 : 25;
-  const packagingCharge = 0; // ₹0 (Muft)
+  const deliveryCharge = 0;
+  const packagingCharge = 0;
 
-  const finalToPay = Math.max(0, itemsTotal - (discountTotal > rawDiscount ? 10 : 0) + deliveryCharge + packagingCharge);
-  const savingsTotal = discountTotal + (itemsTotal >= 49 ? 25 : 0);
+  const finalToPay = itemsTotal;
+  const savingsTotal = discountTotal;
 
   const hasFreeGift = itemsTotal > 0; // Mandi Shagun: Free Mirchi & Dhaniya!
+
+  const getApiCartItems = (): CartItemApiPayload[] => {
+    return items.map((item) => {
+      const option = item.product.weightOptions.find(
+        (w) => w.weight === item.selectedWeight
+      );
+      const productQuantity =
+        option?.rawQty ?? (parseFloat(item.selectedWeight) || 1);
+
+      return {
+        productId: item.product.id,
+        price: item.unitPrice,
+        productQuantity,
+        productCount: item.quantity,
+      };
+    });
+  };
 
   return (
     <CartContext.Provider
       value={{
         items,
         addToCart,
+        updateProductWeight,
         addTadkaItem,
         updateQuantity,
         removeFromCart,
         clearCart,
         getItemQuantity,
+        getApiCartItems,
         totalItemCount,
         itemsTotal,
         discountTotal,
@@ -265,7 +322,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useCart = () => {
   const context = useContext(CartContext);
-  console.log("cart", context);
   if (!context) {
     throw new Error('useCart must be used within a CartProvider');
   }
