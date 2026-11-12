@@ -1,5 +1,30 @@
 import {useQuery} from '@tanstack/react-query';
-import {getBanners, getContactNumbers} from './settingsApi';
+import {getBanners, getContactNumbers, getPaymentDetails} from './settingsApi';
+
+export interface PaymentDetails {
+  upiId: string;
+  paymentNumber: string;
+}
+
+/** `{upiId, paymentNumber}` (possibly wrapped in the API envelope) or null when not set up. */
+const normalizePaymentDetails = (res: any): PaymentDetails | null => {
+  const payload =
+    res && typeof res === 'object' && ('data' in res || 'statusCode' in res)
+      ? res.data
+      : res;
+  const upiId = String(payload?.upiId ?? '').trim();
+  if (!upiId) return null;
+  return {upiId, paymentNumber: String(payload?.paymentNumber ?? '').trim()};
+};
+
+export const useGetPaymentDetails = (enabled = true) =>
+  useQuery({
+    queryKey: ['payment-details'],
+    queryFn: getPaymentDetails,
+    select: normalizePaymentDetails,
+    staleTime: 5 * 60 * 1000,
+    enabled,
+  });
 
 export interface Banner {
   id: string;

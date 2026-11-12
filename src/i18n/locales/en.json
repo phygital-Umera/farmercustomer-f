@@ -350,5 +350,26 @@
     "name": "Name",
     "phone": "Phone Number",
     "footer": "© 2026 Apna Sabzi Mandi • 100% Certified Weight & Farm Fresh"
+  },
+  "upi": {
+    "title": "Pay with UPI",
+    "loading": "Loading payment details...",
+    "error": "Couldn't load payment details",
+    "unavailable": "UPI payment isn't available right now.",
+    "useCod": "Please choose Cash on Delivery.",
+    "hint": "Scan with any UPI app, then tap Place Order",
+    "upiId": "UPI ID",
+    "mobile": "Mobile",
+    "copied": "UPI ID copied",
+    "copyFailed": "Could not copy UPI ID",
+    "openApp": "Pay with UPI App",
+    "done": "Done",
+    "showQr": "Show QR code",
+    "download": "Download",
+    "share": "Share",
+    "downloaded": "QR code downloaded",
+    "linkCopied": "Payment link copied",
+    "shareFailed": "Could not share the QR code",
+    "shareText": "Pay ₹{{amount}} to UPI ID {{upiId}}: {{link}}"
   }
 }

@@ -22,6 +22,7 @@ import { useOrderItem } from '@/lib/api and mutation/Order/useOrder';
 import { useGetAddress } from '@/lib/api and mutation/Order/useAdress';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { UpiQrModal } from './UpiQrModal';
 
 interface CartPageProps {
   onBack: () => void;
@@ -137,6 +138,7 @@ export const CartPage: React.FC<CartPageProps> = ({
 
 
   const [showBillDetailModal, setShowBillDetailModal] = useState(false);
+  const [showUpiModal, setShowUpiModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [quantityOverrides, setQuantityOverrides] = useState<Record<string, number>>({});
 
@@ -504,7 +506,10 @@ export const CartPage: React.FC<CartPageProps> = ({
               return (
                 <div
                   key={opt.id}
-                  onClick={() => setPaymentMethod(opt.id)}
+                  onClick={() => {
+                    setPaymentMethod(opt.id);
+                    if (opt.id === 'upi') setShowUpiModal(true);
+                  }}
                   className={`p-3 flex items-center justify-between gap-3 cursor-pointer transition-colors ${
                     isSelected ? 'bg-[#e8f5e9]/50' : 'hover:bg-gray-50'
                   }`}
@@ -529,6 +534,18 @@ export const CartPage: React.FC<CartPageProps> = ({
                       <p className="text-[11px] text-[#525e54]">
                         {opt.description}
                       </p>
+                      {opt.id === 'upi' && isSelected && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowUpiModal(true);
+                          }}
+                          className="text-[11px] font-bold text-[#00450d] underline cursor-pointer mt-0.5"
+                        >
+                          {t('upi.showQr')}
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -586,6 +603,14 @@ export const CartPage: React.FC<CartPageProps> = ({
           </button>
         </div>
       </div>
+
+      {/* UPI QR popup (only for the UPI option) */}
+      {showUpiModal && (
+        <UpiQrModal
+          amount={displayFinalToPay}
+          onClose={() => setShowUpiModal(false)}
+        />
+      )}
 
       {/* Bill Details Bottom Sheet Modal */}
       {showBillDetailModal && (
