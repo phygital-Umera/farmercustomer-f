@@ -10,3 +10,12 @@ export const getAllProduct = async () => {
         throw error
     }
 }
+
+export const submitFeedback = async (data: any) => {
+    try {
+        const res = await api.post("customer/feedbacks", data)
+        return res.data
+    } catch (error) {
+        throw error
+    }
+}

@@ -189,6 +189,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
       id: order.id,
       status: order.status.toLowerCase() === 'delivered' ? 'delivered' : 'live',
       placedAt: formatOrderDate(order.createdAt),
+      note: order.note,
       items: order.items.map((i) => ({
         name: i.productName,
         image: i.image || '',
@@ -383,6 +384,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
                       {order.totalTax > 0 && ` • Tax: ₹${Number(order.totalTax).toFixed(2)}`}
                     </span>
                     <div className="font-bold text-xs text-[#1b1c1c]">Grand Total</div>
+                    {order.note && (<span>note: {order.note}</span>)}
                   </div>
 
                   <div className="text-right">

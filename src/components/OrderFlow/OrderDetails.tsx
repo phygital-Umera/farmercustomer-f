@@ -20,6 +20,7 @@ import {
 import { useCart } from '@/context/CartContext';
 import { Order, ApiOrder } from '@/types/OrderType';
 import { useGetOrder } from '@/lib/api and mutation/Order/useOrder';
+import { generateOrderInvoice } from '@/utils/generateInvoice';
 
 interface OrderDetailsPageProps {
   orderId: string;
@@ -78,6 +79,7 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
       id: `#${(found.orderNo || found.id).slice(0, 8).toUpperCase()}`,
       status: isDelivered ? 'delivered' : 'live',
       placedAt: formattedDate,
+      note:found.note,
       items: found.items.map((i) => ({
         name: i.productName.charAt(0).toUpperCase() + i.productName.slice(1),
         image: i.image || '',
@@ -124,8 +126,13 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
   const isLive = order.status !== 'delivered';
 
   const handleDownloadInvoice = () => {
-    setDownloadSuccess(true);
-    setTimeout(() => setDownloadSuccess(false), 2500);
+    try {
+      generateOrderInvoice(order);
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 2500);
+    } catch (err) {
+      console.error('Failed to generate invoice:', err);
+    }
   };
 
   const getInstructionLabel = () => {
@@ -368,9 +375,12 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
               <span className="text-xs font-black text-[#1b1c1c] block">
                 Total Amount Paid
               </span>
-              <span className="text-[11px] text-[#1b5e20] font-bold">
-                Aapki Bachat: ₹{order.savingsTotal} Saved 🎉
-              </span>
+            
+              {order.note && (
+                <span className="text-[13px] text-[#1b5e20] font-bold">
+                  Note: {order.note}
+                </span>
+              )}
             </div>
             <span className="text-xl font-black text-[#00450d]">
               ₹{order.totalPaid}

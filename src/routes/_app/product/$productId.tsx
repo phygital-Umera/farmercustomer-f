@@ -3,7 +3,6 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { ItemDetails } from '@/components/OrderFlow/ItemDetails';
 import { BottomNavigation } from '@/components/OrderFlow/BottomNavigation';
 import { Header } from '@/components/OrderFlow/Header';
-import { FloatingCartDock } from '@/components/OrderFlow/FloatingCartDock';
 import { AddressModal } from '@/components/OrderFlow/AddressModal';
 import { CartProvider } from '@/context/CartContext';
 import { useGetAllProducts } from '@/lib/api and mutation/product/useProductApi';
@@ -73,7 +72,6 @@ function ProductDetailContent() {
           }}
           onOpenCart={() => navigate({ to: '/cart' })}
         />
-        <FloatingCartDock onViewCart={() => navigate({ to: '/cart' })} />
         <BottomNavigation
           activeTab="home"
           onSelectTab={handleSelectTab}

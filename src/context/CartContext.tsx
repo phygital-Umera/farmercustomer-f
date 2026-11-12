@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 // import { mockProducts, commonTadkaItems } from '@/data/mockProducts';
 import { CartItem, Product, DeliveryInstruction, PaymentMethod, TadkaItem, Order, CartItemApiPayload } from '@/types/OrderType';
 
@@ -46,20 +46,21 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Initial mock cart commented out:
-// const initialCartItems: CartItem[] = [
-//   {
-//     product: mockProducts[1],
-//     selectedWeight: '1 kg packet',
-//     unitPrice: 40,
-//     unitMrp: 48,
-//     quantity: 1,
-//   },
-//   ...
-// ];
-
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('mandi_cart_items');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('mandi_cart_items', JSON.stringify(items));
+    } catch {}
+  }, [items]);
   const [deliveryInstruction, setDeliveryInstruction] = useState<DeliveryInstruction>('ring_bell');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
   const [address, setAddress] = useState<DeliveryAddress>({

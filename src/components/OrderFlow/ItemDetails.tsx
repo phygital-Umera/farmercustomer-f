@@ -72,7 +72,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
   };
 
   return (
-    <div className="bg-[#fcf9f8] min-h-screen pb-32">
+    <div className="bg-[#fcf9f8] min-h-screen pb-48">
       {/* Top Header Bar matching Screenshot 3 */}
       <div className="sticky top-0 z-40 bg-[#fcf9f8]/95 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-black/[0.04]">
         <div className="flex items-center gap-2">
@@ -166,15 +166,68 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
             {product.englishSubtitle}
           </p>
 
-          <div className="flex items-baseline gap-2 mt-2">
-            {currentCutPrice && currentCutPrice > 0 ? (
-              <span className="text-base sm:text-lg text-[#8a948c] line-through font-normal">
-                ₹{currentCutPrice.toLocaleString('en-IN')}
+          <div className="flex items-center justify-between gap-2 mt-2">
+            <div className="flex items-baseline gap-2">
+              {currentCutPrice && currentCutPrice > 0 ? (
+                <span className="text-base sm:text-lg text-[#8a948c] line-through font-normal">
+                  ₹{currentCutPrice.toLocaleString('en-IN')}
+                </span>
+              ) : null}
+              <span className="text-2xl sm:text-3xl font-extrabold text-[#00450d] tracking-tight">
+                ₹{currentPrice.toLocaleString('en-IN')}
               </span>
-            ) : null}
-            <span className="text-2xl sm:text-3xl font-extrabold text-[#00450d] tracking-tight">
-              ₹{currentPrice.toLocaleString('en-IN')}
-            </span>
+            </div>
+
+            {/* Quick Add Button or Quantity Stepper by the Price */}
+            <div>
+              {currentQty > 0 ? (
+                <QuantityStepper
+                  quantity={currentQty}
+                  onIncrement={() => {
+                    const rawQty = activeWeightOption?.rawQty ?? (parseFloat(selectedWeight) || 1);
+                    const payload = {
+                      productId: product.id,
+                      price: currentPrice,
+                      productQuantity: rawQty,
+                      productCount: currentQty + 1,
+                    };
+                    console.log('🛒 Cart Item:', payload);
+                    updateQuantity(product.id, selectedWeight, 1);
+                  }}
+                  onDecrement={() => {
+                    const rawQty = activeWeightOption?.rawQty ?? (parseFloat(selectedWeight) || 1);
+                    const payload = {
+                      productId: product.id,
+                      price: currentPrice,
+                      productQuantity: rawQty,
+                      productCount: currentQty - 1,
+                    };
+                    console.log('🛒 Cart Item:', payload);
+                    updateQuantity(product.id, selectedWeight, -1);
+                  }}
+                  size="sm"
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const rawQty = activeWeightOption?.rawQty ?? (parseFloat(selectedWeight) || 1);
+                    const payload = {
+                      productId: product.id,
+                      price: currentPrice,
+                      productQuantity: rawQty,
+                      productCount: 1,
+                    };
+                    console.log('🛒 Cart Item:', payload);
+                    addToCart(product, selectedWeight, currentPrice, currentMrp);
+                  }}
+                  className="bg-[#00450d] hover:bg-[#1b5e20] text-white font-black text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all active:scale-95 shadow-xs cursor-pointer"
+                >
+                  <Plus size={15} strokeWidth={2.5} />
+                  <span>ADD</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -257,6 +310,75 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
           </div>
         </div>
 
+        {/* Selected Weight Variant & Add To Cart Button */}
+        <div className="bg-white rounded-2xl p-3.5 border border-[#e0e6e0] shadow-2xs flex items-center justify-between gap-3">
+          <div>
+            <span className="text-[11px] text-[#525e54] font-medium block">
+              Selected: <strong className="text-[#1b1c1c]">{selectedWeight}</strong>
+            </span>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              {currentCutPrice && currentCutPrice > 0 ? (
+                <span className="text-xs text-[#8a948c] line-through font-normal">
+                  ₹{currentCutPrice.toLocaleString('en-IN')}
+                </span>
+              ) : null}
+              <span className="text-lg font-black text-[#00450d]">
+                ₹{currentPrice.toLocaleString('en-IN')}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {currentQty > 0 ? (
+              <QuantityStepper
+                quantity={currentQty}
+                onIncrement={() => {
+                  const rawQty = activeWeightOption?.rawQty ?? (parseFloat(selectedWeight) || 1);
+                  const payload = {
+                    productId: product.id,
+                    price: currentPrice,
+                    productQuantity: rawQty,
+                    productCount: currentQty + 1,
+                  };
+                  console.log('🛒 Cart Item:', payload);
+                  updateQuantity(product.id, selectedWeight, 1);
+                }}
+                onDecrement={() => {
+                  const rawQty = activeWeightOption?.rawQty ?? (parseFloat(selectedWeight) || 1);
+                  const payload = {
+                    productId: product.id,
+                    price: currentPrice,
+                    productQuantity: rawQty,
+                    productCount: currentQty - 1,
+                  };
+                  console.log('🛒 Cart Item:', payload);
+                  updateQuantity(product.id, selectedWeight, -1);
+                }}
+                size="md"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  const rawQty = activeWeightOption?.rawQty ?? (parseFloat(selectedWeight) || 1);
+                  const payload = {
+                    productId: product.id,
+                    price: currentPrice,
+                    productQuantity: rawQty,
+                    productCount: 1,
+                  };
+                  console.log('🛒 Cart Item:', payload);
+                  addToCart(product, selectedWeight, currentPrice, currentMrp);
+                }}
+                className="bg-[#00450d] hover:bg-[#1b5e20] text-white font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all active:scale-95 shadow-md cursor-pointer"
+              >
+                <ShoppingBag size={17} />
+                <span>ADD TO CART</span>
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Mandi Bhav Muqabla (Price Match) Card */}
     
 
@@ -335,8 +457,8 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
       
       </div>
 
-      {/* Sticky Bottom Bar matching Screenshot 3 */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-black/[0.08] p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
+      {/* Sticky Bottom Bar positioned right above BottomNavigation */}
+      <div className="fixed bottom-14 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-black/[0.08] p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
         <div className="max-w-md mx-auto flex items-center justify-between gap-3">
           <div>
             <span className="text-[11px] text-[#525e54] font-medium block">
