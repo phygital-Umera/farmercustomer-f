@@ -35,6 +35,7 @@ function OrdersRouteContent() {
   const handleSelectTab = (tab: ActiveTab) => {
     if (tab === 'orders') return;
     if (tab === 'home') navigate({ to: '/' });
+    else if (tab === 'preorder') navigate({ to: '/preorder' });
     else if (tab === 'cart') navigate({ to: '/cart' });
     else navigate({ to: '/' });
   };

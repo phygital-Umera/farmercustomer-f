@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { addCart, changeCount, getCart } from "./cartApi"
+import i18n from '@/i18n'
 import toast from "react-hot-toast"
 
 export const useAddToCart = () => {
@@ -8,10 +9,10 @@ export const useAddToCart = () => {
         mutationFn: addCart,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['cart'] });
-            toast.success("Item added to cart")
+            toast.success(i18n.t("toast.addedToCart"))
         },
         onError: (error: any) => {
-            const message = error?.response?.data?.message || "Failed to add item to cart"
+            const message = error?.response?.data?.message || i18n.t("toast.addToCartFailed")
             toast.error(message)
         }
     })
@@ -30,10 +31,10 @@ export const useChangeCount = () => {
         mutationFn: ({ id, data }: { id: string; data: any }) => changeCount(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['cart'] });
-            toast.success("Item count changed")
+            toast.success(i18n.t("toast.countChanged"))
         },
         onError: (error: any) => {
-            const message = error?.response?.data?.message || "Failed to change item count"
+            const message = error?.response?.data?.message || i18n.t("toast.countFailed")
             toast.error(message)
         }
     })

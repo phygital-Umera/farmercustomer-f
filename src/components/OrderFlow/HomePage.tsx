@@ -19,10 +19,13 @@ import { Product } from '@/types/OrderType';
 import { useCart } from '@/context/CartContext';
 import { QuantityStepper } from './QuantityStepper';
 import { SearchBar } from './SearchBar';
+import { BannerCarousel } from './BannerCarousel';
 import { useGetAllProducts } from '@/lib/api and mutation/product/useProductApi';
 import { mapApiProductToProduct } from '@/utils/productMapper';
 import { useAuthContext } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
+import { currentLocale } from '@/i18n';
 
 interface HomePageProps {
   onSelectProduct: (productId: string) => void;
@@ -37,6 +40,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
   const { data: productsData, isLoading: productsLoading } = useGetAllProducts();
 
   const { isAuthenticated } = useAuthContext();
+  const { t } = useTranslation();
 
 
   // Map API response to UI Product model, fallback to empty list if API list is empty
@@ -55,7 +59,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
   // Extract categories dynamically from available products
   const categories = useMemo(() => {
     const list: { id: string; label: string; icon: React.ReactNode }[] = [
-      { id: 'all', label: 'All Products', icon: <ShoppingBasket size={15} /> },
+      { id: 'all', label: t('home.allProducts'), icon: <ShoppingBasket size={15} /> },
     ];
 
     const seen = new Set<string>();
@@ -72,7 +76,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
     });
 
     return list;
-  }, [allProducts]);
+  }, [allProducts, t]);
 
   const filteredProducts = useMemo(() => {
     return allProducts.filter((product) => {
@@ -102,6 +106,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
         <SearchBar value={searchQuery} onChange={setSearchQuery} />
       </div>
 
+      {/* Store banners (static if one, auto-sliding if many) */}
+      <div className="px-4 pb-2">
+        <BannerCarousel />
+      </div>
+
       {/* Category Pills Bar matching Screenshot 3 */}
       <div className="px-4 py-1.5 overflow-x-auto no-scrollbar flex items-center gap-2">
         {categories.map((cat) => {
@@ -125,14 +134,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
         })}
       </div>
 
-      {/* Fresh Mandi Promise Banner */}
-     
 
       {/* Section Header */}
       <div className="px-4 mt-2 mb-3 flex items-center justify-between">
         <div>
           <h2 className="text-base sm:text-lg font-bold text-[#1b1c1c] tracking-tight">
-            Taaza Sabziyan (Fresh Veggies)
+            {t('home.sectionTitle')}
           </h2>
          
         </div>
@@ -211,7 +218,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
                         >
                           <span>{w.weight}</span>
                           <span className="text-[10px] font-medium opacity-80">
-                            ₹{w.price.toLocaleString('en-IN')}
+                            ₹{w.price.toLocaleString(currentLocale())}
                           </span>
                         </button>
                       );
@@ -225,11 +232,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
                     <div className="flex items-baseline gap-1.5 flex-wrap">
                       {displayCut && displayCut > displayPrice ? (
                         <span className="text-xs sm:text-xs text-[#8a948c] line-through font-normal">
-                          ₹{displayCut.toLocaleString('en-IN')}
+                          ₹{displayCut.toLocaleString(currentLocale())}
                         </span>
                       ) : null}
                       <span className="font-extrabold text-sm sm:text-base text-[#1a1c1a]">
-                        ₹{displayPrice.toLocaleString('en-IN')}
+                        ₹{displayPrice.toLocaleString(currentLocale())}
                       </span>
                     </div>
                   </div>
@@ -278,7 +285,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
                       }}
                       className="h-7 px-3 rounded-lg border-1.5 border-[#2e7d32] bg-white hover:bg-[#e8f5e9] text-[#2e7d32] font-black text-xs uppercase tracking-wider transition-all active:scale-95 shadow-2xs cursor-pointer"
                     >
-                      + ADD
+                      {t('common.add')}
                     </button>
                   )}
                 </div>
@@ -291,16 +298,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
       {productsLoading ? (
         <div className="px-4 py-16 text-center text-[#525e54]">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#1b5e20] border-r-transparent align-[-0.125em]" />
-          <p className="mt-3 text-xs font-semibold text-[#1b5e20]">Mandi se taaza sabziyan load ho rahi hain...</p>
+          <p className="mt-3 text-xs font-semibold text-[#1b5e20]">{t('home.loading')}</p>
         </div>
       ) : filteredProducts.length === 0 ? (
         <div className="px-4 py-12 text-center text-[#525e54]">
           <ShoppingBasket size={42} className="mx-auto text-[#717a6d] mb-2 opacity-50" />
-          <p className="font-bold text-sm">Koi sabzi nahi mili!</p>
+          <p className="font-bold text-sm">{t('home.emptyTitle')}</p>
           <p className="text-xs text-[#717a6d] mt-1">
             {searchQuery
-              ? "Doosra naam try karein jaise 'tamatar', 'aloo', 'palak'."
-              : 'Abhi koi products uplabdh nahi hain.'}
+              ? t('home.emptySearch')
+              : t('home.emptyNone')}
           </p>
         </div>
       ) : null}
@@ -314,10 +321,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
             </div>
             <div className="text-xs text-[#1b5e20]">
               <p className="font-extrabold text-[13px]">
-                Apna Mandi Shuddhta Guarantee
+                {t('home.guaranteeTitle')}
               </p>
               <p className="text-[#41493e] mt-0.5 leading-snug">
-                Har sabzi digital kaante par tauli jaati hai. Kuch pasand na aaye toh bina sawaal doorstep replacement!
+                {t('home.guaranteeDesc')}
               </p>
             </div>
           </div>

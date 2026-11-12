@@ -1,4 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
+import i18n from '@/i18n'
 import toast from 'react-hot-toast';
 import { ApiOrder, CartItemApiPayload } from '@/types/OrderType';
 import { useAddToCart } from '../cart/useCart';
@@ -21,7 +22,7 @@ export const useRepeatOrder = () => {
       }));
 
     if (items.length === 0) {
-      toast.error('Is order me koi item nahi hai');
+      toast.error(i18n.t('toast.repeatEmpty'));
       return;
     }
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Minus, Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface QuantityStepperProps {
   quantity: number;
@@ -16,6 +17,7 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
   className = '',
   size = 'md',
 }) => {
+  const { t } = useTranslation();
   const sizeClasses = {
     sm: 'h-7 px-2 text-xs gap-1.5',
     md: 'h-8 px-2.5 text-sm gap-2',
@@ -37,7 +39,7 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
         type="button"
         onClick={onDecrement}
         className="flex items-center justify-center p-0.5 rounded hover:bg-white/20 transition-colors focus:outline-none cursor-pointer"
-        aria-label="Decrease quantity"
+        aria-label={t('stepper.decrease')}
       >
         <Minus size={iconSizes} strokeWidth={2.5} />
       </button>
@@ -50,7 +52,7 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
         type="button"
         onClick={onIncrement}
         className="flex items-center justify-center p-0.5 rounded hover:bg-white/20 transition-colors focus:outline-none cursor-pointer"
-        aria-label="Increase quantity"
+        aria-label={t('stepper.increase')}
       >
         <Plus size={iconSizes} strokeWidth={2.5} />
       </button>

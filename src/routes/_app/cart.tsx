@@ -20,6 +20,7 @@ function CartRouteContent() {
   const handleSelectTab = (tab: ActiveTab) => {
     if (tab === 'cart') return;
     if (tab === 'home') navigate({ to: '/' });
+    else if (tab === 'preorder') navigate({ to: '/preorder' });
     else if (tab === 'orders') navigate({ to: '/order' });
     else if (tab === 'categories') navigate({ to: '/' });
   };

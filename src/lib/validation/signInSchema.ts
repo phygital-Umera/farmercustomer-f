@@ -1,13 +1,13 @@
 import {z} from 'zod';
 
 export const signInSchema = z.object({
-  username: z.string().min(1, 'Email or username is required'),
-  password: z.string().min(1, 'Password is required'),
+  username: z.string().min(1, 'validation.usernameRequired'),
+  password: z.string().min(1, 'validation.passwordRequired'),
 });
 
 export const registerCustomerSchema = z.object({
-  fullname: z.string().min(1, 'Name is required'),
+  fullname: z.string().min(1, 'validation.nameRequired'),
   role:z.literal('CUSTOMER'),
-  phoneNumber: z.string().min(10, 'Phone number must be at least 10 digits'),
-  password: z.string().min(6, 'Password must be at least 6 characters long'),
+  phoneNumber: z.string().min(10, 'validation.phoneMin'),
+  password: z.string().min(6, 'validation.passwordMin'),
 });

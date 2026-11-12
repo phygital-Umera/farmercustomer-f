@@ -4,11 +4,12 @@ import z from 'zod';
 import {FormProvider, useForm} from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useSubmitFeedback} from '@/lib/api and mutation/product/useProductApi';
+import {useTranslation} from 'react-i18next';
 
 const feedbackschema = z.object({
-  quality: z.string().min(1, 'Please select Quality rating'),
-  service: z.string().min(1, 'Please select Service rating'),
-  staffRegard: z.string().min(1, 'Please select Staff Regard rating'),
+  quality: z.string().min(1, 'validation.qualityRequired'),
+  service: z.string().min(1, 'validation.serviceRequired'),
+  staffRegard: z.string().min(1, 'validation.staffRequired'),
   note: z.string().optional().default(''),
   GOOD: z.string().optional(),
   POOR: z.string().optional(),
@@ -23,6 +24,7 @@ interface FeedbackModalProps {
 
 export const FeedbackModal: React.FC<FeedbackModalProps> = ({onClose}) => {
   const {mutate: submitFeedback} = useSubmitFeedback();
+  const {t} = useTranslation();
 
   // Rendered only while open, so the form always starts blank.
   const method = useForm<feedbacktype>({
@@ -72,10 +74,10 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({onClose}) => {
             </div>
             <div>
               <h3 className="text-gray-900 text-sm font-bold">
-                Apna Mandi Feedback
+                {t('feedback.title')}
               </h3>
               <p className="text-gray-500 text-[10px]">
-                Aapka anubhav humare liye mahtvapoorna hai
+                {t('feedback.subtitle')}
               </p>
             </div>
           </div>
@@ -94,17 +96,17 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({onClose}) => {
             {[
               {
                 id: 'quality' as const,
-                title: '1. Sabzi Quality',
+                title: t('feedback.quality'),
                 value: currentQuality,
               },
               {
                 id: 'service' as const,
-                title: '2. Delivery Service',
+                title: t('feedback.service'),
                 value: currentService,
               },
               {
                 id: 'staffRegard' as const,
-                title: '3. Staff Behavior',
+                title: t('feedback.staff'),
                 value: currentStaffRegard,
               },
             ].map((field) => (
@@ -116,9 +118,9 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({onClose}) => {
                 </div>
                 <div className="flex gap-2">
                   {[
-                    {key: 'EXCELLENT', label: 'Excellent'},
-                    {key: 'GOOD', label: 'Good'},
-                    {key: 'POOR', label: 'Poor'},
+                    {key: 'EXCELLENT', label: t('feedback.excellent')},
+                    {key: 'GOOD', label: t('feedback.good')},
+                    {key: 'POOR', label: t('feedback.poor')},
                   ].map((opt) => {
                     const isSelected = Boolean(
                       field.value && field.value === opt.key,
@@ -145,7 +147,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({onClose}) => {
                 </div>
                 {errors[field.id] && (
                   <p className="text-[10px] font-medium text-red-500">
-                    {errors[field.id]?.message}
+                    {t(errors[field.id]?.message || '')}
                   </p>
                 )}
               </div>
@@ -154,12 +156,12 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({onClose}) => {
             {/* Suggestion / Note */}
             <div className="space-y-1">
               <label className="text-gray-800 text-xs font-semibold">
-                4. Suggestion (Optional)
+                {t('feedback.suggestion')}
               </label>
               <textarea
                 {...register('note')}
                 rows={2}
-                placeholder="Koi sujhav share karein..."
+                placeholder={t('feedback.suggestionPlaceholder')}
                 className="border-gray-200 placeholder:text-gray-400 w-full resize-none rounded-lg border p-2.5 text-xs outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
               />
             </div>
@@ -171,13 +173,13 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({onClose}) => {
                 onClick={onClose}
                 className="border-gray-200 text-gray-600 hover:bg-gray-50 flex-1 rounded-lg border py-2 text-xs font-semibold transition-colors"
               >
-                Later
+                {t('feedback.later')}
               </button>
               <button
                 type="submit"
                 className="flex-1 rounded-lg bg-emerald-800 py-2 text-xs font-bold text-white shadow-sm transition-transform hover:bg-emerald-900 active:scale-95"
               >
-                Submit Feedback
+                {t('feedback.submit')}
               </button>
             </div>
           </form>

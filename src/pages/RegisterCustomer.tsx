@@ -10,12 +10,14 @@ import {LuEyeOff} from 'react-icons/lu';
 import {Sprout} from 'lucide-react';
 import {z} from 'zod';
 import toast from 'react-hot-toast';
+import {useTranslation} from 'react-i18next';
 
 
 type RegisterCustomerFormValues = z.infer<typeof registerCustomerSchema>;
 
 const RegisterCustomer: React.FC = () => {
   const navigate = useNavigate();
+  const {t} = useTranslation();
   const {mutateAsync: registerCustomer, isError, isPending} = useCustomerRegister();
   const {
     register,
@@ -49,7 +51,7 @@ const RegisterCustomer: React.FC = () => {
   //   }
   // }, [isAuthenticated, navigate]);
   const onSubmit = async (values: RegisterCustomerFormValues) => {
-    const toastId = toast.loading('Registering account...');
+    const toastId = toast.loading(t('auth.registering'));
     try {
       const response = await registerCustomer(values);
 
@@ -61,12 +63,12 @@ const RegisterCustomer: React.FC = () => {
         login(accessToken, userData, refreshToken);
       }
 
-      toast.success('Registration successful!', { id: toastId });
+      toast.success(t('auth.registerSuccess'), { id: toastId });
       navigate({ to: '/' });
     } catch (error: any) {
       console.error('Registration error:', error);
       toast.error(
-        error?.response?.data?.message || 'Registration failed. Please try again.',
+        error?.response?.data?.message || t('auth.registerFailed'),
         { id: toastId }
       );
     }
@@ -90,10 +92,10 @@ const RegisterCustomer: React.FC = () => {
               <Sprout size={32} strokeWidth={2.4} />
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#00450d]">
-              Apna Sabzi Mandi
+              {t('header.brand')}
             </h2>
             <p className="mt-1 text-xs sm:text-sm font-medium text-[#525e54]">
-              Sign in to manage your orders &amp; fresh mandi savings
+              {t('auth.tagline')}
             </p>
           </div>
 
@@ -104,12 +106,12 @@ const RegisterCustomer: React.FC = () => {
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#1b1c1c]">
                   <FiUser className="text-[#1b5e20]" />
-                  Name
+                  {t('auth.name')}
                 </label>
                 <div className="group/input relative">
                   <input
                     type="text"
-                    placeholder="Enter your User ID or Mobile"
+                    placeholder={t('auth.userIdPlaceholder')}
                     {...register('fullname')}
                     className={`w-full rounded-xl border bg-[#fcf9f8] px-4 py-3 text-sm text-[#1b1c1c] placeholder:text-[#717a6d] outline-none transition-all duration-200 ${
                       errors.fullname
@@ -125,7 +127,7 @@ const RegisterCustomer: React.FC = () => {
                 </div>
                 {errors.fullname && (
                   <p className="animate-shake flex items-center gap-1 text-xs font-medium text-red-600">
-                    <span>•</span> {errors.fullname.message}
+                    <span>•</span> {t(errors.fullname.message || '')}
                   </p>
                 )}
               </div>
@@ -133,12 +135,12 @@ const RegisterCustomer: React.FC = () => {
                  <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#1b1c1c]">
                   <FiUser className="text-[#1b5e20]" />
-                  Phone Number
+                  {t('auth.phone')}
                 </label>
                 <div className="group/input relative">
                   <input
                     type="text"
-                    placeholder="Enter your User ID or Mobile"
+                    placeholder={t('auth.userIdPlaceholder')}
                     {...register('phoneNumber')}
                     className={`w-full rounded-xl border bg-[#fcf9f8] px-4 py-3 text-sm text-[#1b1c1c] placeholder:text-[#717a6d] outline-none transition-all duration-200 ${
                       errors.phoneNumber
@@ -154,7 +156,7 @@ const RegisterCustomer: React.FC = () => {
                 </div>
                 {errors.phoneNumber && (
                   <p className="animate-shake flex items-center gap-1 text-xs font-medium text-red-600">
-                    <span>•</span> {errors.phoneNumber.message}
+                    <span>•</span> {t(errors.phoneNumber.message || '')}
                   </p>
                 )}
               </div>
@@ -163,12 +165,12 @@ const RegisterCustomer: React.FC = () => {
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#1b1c1c]">
                   <FiLock className="text-[#1b5e20]" />
-                  Password
+                  {t('auth.password')}
                 </label>
                 <div className="group/input relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
+                    placeholder={t('auth.passwordPlaceholder')}
                     {...register('password')}
                     className={`w-full rounded-xl border bg-[#fcf9f8] px-4 py-3 text-sm text-[#1b1c1c] placeholder:text-[#717a6d] outline-none transition-all duration-200 ${
                       errors.password
@@ -190,7 +192,7 @@ const RegisterCustomer: React.FC = () => {
                 </div>
                 {errors.password && (
                   <p className="animate-shake flex items-center gap-1 text-xs font-medium text-red-600">
-                    <span>•</span> {errors.password.message}
+                    <span>•</span> {t(errors.password.message || '')}
                   </p>
                 )}
               </div>
@@ -203,7 +205,7 @@ const RegisterCustomer: React.FC = () => {
                   className="w-full transform rounded-xl bg-[#00450d] px-6 py-3.5 text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#1b5e20] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                 >
                   <span>
-                    {isSubmitting ? 'Signing in...' : 'Sign in to Apna Mandi'}
+                    {isSubmitting ? t('auth.registering') : t('auth.register')}
                   </span>
                 </button>
               </div>
@@ -215,7 +217,7 @@ const RegisterCustomer: React.FC = () => {
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1b5e20] transition-colors hover:text-[#00450d]"
                 >
                   <FiArrowRight className="rotate-180" />
-                  <span>Sabzi Mandi Dekhein (Back to Store)</span>
+                  <span>{t('cart.browse')}</span>
                 </Link>
               </div>
             </form>
@@ -223,7 +225,7 @@ const RegisterCustomer: React.FC = () => {
 
           {/* Footer */}
           <p className="mt-6 text-center text-xs font-medium text-[#525e54]">
-            © 2026 Apna Sabzi Mandi • 100% Certified Wazan &amp; Farm Fresh
+            {t('auth.footer')}
           </p>
         </div>
       </div>

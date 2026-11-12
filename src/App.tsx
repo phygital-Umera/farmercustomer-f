@@ -11,6 +11,8 @@ import { WebSocketProvider } from './context/WebSocketContext';
 import { AuthContextType } from './types';
 import {useEffect, useState} from 'react';
 import SplashScreen from './components/SplashScreen';
+import { LanguageSelectModal } from './components/LanguageSelectModal';
+import { useLanguageSync } from './i18n/useLanguageSync';
 
 // Create a single router instance outside the component.
 // The context here is just a placeholder — the real auth values are injected
@@ -52,6 +54,13 @@ const RouterWithAuth = () => {
   return <RouterProvider router={router} context={{ auth }} />;
 };
 
+/** Asks a logged-in user for a language once, and restores it afterwards. */
+const LanguageGate = ({ hidden }: { hidden: boolean }) => {
+  const { needsChoice, choose } = useLanguageSync();
+  if (hidden || !needsChoice) return null;
+  return <LanguageSelectModal onSelect={choose} />;
+};
+
 const App = () => {
   // Splash plays once per page load; App never remounts on route navigation.
   const [showSplash, setShowSplash] = useState(true);
@@ -65,6 +74,7 @@ const App = () => {
         <QueryProvider>
           <RouterWithAuth />
         </QueryProvider>
+        <LanguageGate hidden={showSplash} />
         {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       </WebSocketProvider>
     </AuthContextProvider>

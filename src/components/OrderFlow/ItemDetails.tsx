@@ -18,6 +18,8 @@ import {
 import { Product, unit } from '@/types/OrderType';
 import { useCart } from '@/context/CartContext';
 import { QuantityStepper } from './QuantityStepper';
+import { useTranslation } from 'react-i18next';
+import { currentLocale } from '@/i18n';
 
 interface ItemDetailsProps {
   product: Product;
@@ -31,6 +33,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
   onOpenCart,
 }) => {
   const { addToCart, updateQuantity, getItemQuantity, addTadkaItem, items } = useCart();
+  const { t } = useTranslation();
   const cartItem = items.find((i) => i.product.id === product.id);
   const [selectedWeight, setSelectedWeight] = useState<string>(
     cartItem?.selectedWeight || product.defaultWeight || product.weightOptions[0]?.weight || '1 kg'
@@ -60,7 +63,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
     if (navigator.share) {
       navigator.share({
         title: product.name,
-        text: `Order fresh ${product.name} directly from Mandi on Apna Sabzi Mandi!`,
+        text: t('product.shareText', { name: product.name }),
         url: window.location.href,
       }).catch(() => {});
     } else {
@@ -87,12 +90,12 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
             type="button"
             onClick={onBack}
             className="p-1 -ml-1 text-[#1b1c1c] hover:bg-black/5 rounded-full transition-colors cursor-pointer"
-            aria-label="Back"
+            aria-label={t('common.back')}
           >
             <ArrowLeft size={22} strokeWidth={2.2} />
           </button>
           <h1 className="font-bold text-base sm:text-lg text-[#1b1c1c] tracking-tight">
-            Product Details
+            {t('product.title')}
           </h1>
         </div>
 
@@ -101,12 +104,12 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
             type="button"
             onClick={handleShare}
             className="w-8 h-8 rounded-full bg-white border border-black/10 flex items-center justify-center text-[#41493e] hover:text-[#00450d] transition-colors relative cursor-pointer"
-            aria-label="Share"
+            aria-label={t('product.share')}
           >
             <Share2 size={16} />
             {copiedShare && (
               <span className="absolute -bottom-6 bg-black text-white text-[10px] px-1.5 py-0.5 rounded shadow">
-                Link copied
+                {t('product.linkCopied')}
               </span>
             )}
           </button>
@@ -117,7 +120,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
             className={`w-8 h-8 rounded-full bg-white border border-black/10 flex items-center justify-center transition-colors cursor-pointer ${
               isWishlisted ? 'text-red-500 fill-red-500' : 'text-[#41493e] hover:text-red-500'
             }`}
-            aria-label="Add to Wishlist"
+            aria-label={t('product.wishlist')}
           >
             <Heart size={16} className={isWishlisted ? 'fill-red-500 text-red-500' : ''} />
           </button>
@@ -137,7 +140,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
           {/* Top Freshness Badge */}
           <div className="absolute top-3 left-3 z-10">
             <span className="bg-[#00450d] text-white text-[10px] sm:text-[11px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
-              {product.freshnessBadge}
+              {t('product.freshBadge')}
             </span>
           </div>
 
@@ -155,7 +158,15 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
           <div className="absolute bottom-3 right-3 z-10">
             <span className="inline-flex items-center gap-1 bg-white/95 backdrop-blur-xs text-[#00450d] text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm border border-black/5">
               <Scale size={12} className="text-[#1b5e20]" />
-              <span>{product.certifiedBadge}</span>
+              <span>
+                {t(
+                  product.unit === unit.KG || product.unit === unit.GRAM
+                    ? 'product.badgeWeight'
+                    : product.unit === unit.LTR || product.unit === unit.ML
+                      ? 'product.badgePure'
+                      : 'product.badgeVerified',
+                )}
+              </span>
             </span>
           </div>
         </div>
@@ -177,11 +188,11 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
             <div className="flex items-baseline gap-2">
               {currentCutPrice && currentCutPrice > 0 ? (
                 <span className="text-base sm:text-lg text-[#8a948c] line-through font-normal">
-                  ₹{currentCutPrice.toLocaleString('en-IN')}
+                  ₹{currentCutPrice.toLocaleString(currentLocale())}
                 </span>
               ) : null}
               <span className="text-2xl sm:text-3xl font-extrabold text-[#00450d] tracking-tight">
-                ₹{currentPrice.toLocaleString('en-IN')}
+                ₹{currentPrice.toLocaleString(currentLocale())}
               </span>
             </div>
 
@@ -231,7 +242,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
                   className="bg-[#00450d] hover:bg-[#1b5e20] text-white font-black text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all active:scale-95 shadow-xs cursor-pointer"
                 >
                   <Plus size={15} strokeWidth={2.5} />
-                  <span>ADD</span>
+                  <span>{t('product.add')}</span>
                 </button>
               )}
             </div>
@@ -245,10 +256,10 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
           </div>
           <div>
             <p className="text-xs sm:text-sm font-extrabold text-[#1b1c1c]">
-              10-15 Minute Mein Delivery
+              {t('product.fastDelivery')}
             </p>
             <p className="text-[11px] text-[#525e54]">
-              Ghar baithe taza sabzi to Mumbai 400001
+              {t('product.fastDeliveryDesc')}
             </p>
           </div>
         </div>
@@ -258,17 +269,17 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-bold text-sm sm:text-base text-[#1b1c1c]">
               {product.unit === unit.LTR || product.unit === unit.ML
-                ? 'Kitna Chahiye? (Select Volume)'
+                ? t('product.howMuchVolume')
                 : product.unit === unit.PCS || product.unit === unit.PACKET
-                ? 'Kitna Chahiye? (Select Pack / Quantity)'
-                : 'Kitna Chahiye? (Select Weight)'}
+                ? t('product.howMuchPack')
+                : t('product.howMuchWeight')}
             </h3>
             <span className="text-[11px] font-semibold text-[#1b5e20]">
               {product.unit === unit.LTR || product.unit === unit.ML
-                ? 'Certified Net Volume'
+                ? t('product.netVolume')
                 : product.unit === unit.PCS || product.unit === unit.PACKET
-                ? 'Quality Verified Pack'
-                : 'Net Graded Wazan'}
+                ? t('product.verifiedPack')
+                : t('product.netWeight')}
             </span>
           </div>
 
@@ -301,11 +312,11 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
                   <div className="flex items-baseline gap-1.5 mt-0.5">
                     {opt.cutPrice && opt.cutPrice > 0 ? (
                       <span className="text-xs text-[#8a948c] line-through font-normal">
-                        ₹{opt.cutPrice.toLocaleString('en-IN')}
+                        ₹{opt.cutPrice.toLocaleString(currentLocale())}
                       </span>
                     ) : null}
                     <span className="font-black text-sm text-[#00450d]">
-                      ₹{opt.price.toLocaleString('en-IN')}
+                      ₹{opt.price.toLocaleString(currentLocale())}
                     </span>
                   </div>
 
@@ -322,7 +333,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
         {/* Ghar Ki Rasoi Ke Liye Vishwas (Our Guarantee) */}
         <div className="space-y-2 pt-1">
           <h3 className="font-bold text-sm sm:text-base text-[#1b1c1c]">
-            Ghar Ki Rasoi Ke Liye Vishwas (Our Guarantee)
+            {t('product.guaranteeTitle')}
           </h3>
 
           <div className="bg-white rounded-2xl p-3.5 border border-[#e0e6e0] space-y-3 shadow-2xs">
@@ -333,10 +344,10 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
               </div>
               <div className="text-xs">
                 <p className="font-bold text-[#1b1c1c]">
-                  Haath se chuni hui sabzi (Graded Quality)
+                  {t('product.g1Title')}
                 </p>
                 <p className="text-[#525e54] text-[11px] mt-0.5">
-                  Kachha ya gala hua tamatar nahi aayega, har daana kadak.
+                  {t('product.g1Desc')}
                 </p>
               </div>
             </div>
@@ -348,10 +359,10 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
               </div>
               <div className="text-xs">
                 <p className="font-bold text-[#1b1c1c]">
-                  Bilkul No Daagi Guarantee
+                  {t('product.g2Title')}
                 </p>
                 <p className="text-[#525e54] text-[11px] mt-0.5">
-                  Bina daag aur fresh skin waale selected tamatar.
+                  {t('product.g2Desc')}
                 </p>
               </div>
             </div>
@@ -363,10 +374,10 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
               </div>
               <div className="text-xs">
                 <p className="font-bold text-[#1b1c1c]">
-                  Doorstep Replacement ya 1-Tap Refund
+                  {t('product.g3Title')}
                 </p>
                 <p className="text-[#525e54] text-[11px] mt-0.5">
-                  Pasand na aaye toh delivery boy ko turant wapas karein.
+                  {t('product.g3Desc')}
                 </p>
               </div>
             </div>
@@ -378,10 +389,10 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
               </div>
               <div className="text-xs">
                 <p className="font-bold text-[#1b1c1c]">
-                  100% Sahi Digital Weighing
+                  {t('product.g4Title')}
                 </p>
                 <p className="text-[#525e54] text-[11px] mt-0.5">
-                  Dandi marne ka koi jhanjhat nahi, poora taula hua packet.
+                  {t('product.g4Desc')}
                 </p>
               </div>
             </div>
@@ -399,20 +410,20 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
         <div className="max-w-md mx-auto flex items-center justify-between gap-3">
           <div>
             <span className="text-[11px] text-[#525e54] font-medium block">
-              Selected: {selectedWeight}
+              {t('product.selected', { weight: selectedWeight })}
             </span>
             <div className="flex items-baseline gap-1.5">
               {hasInCart ? null : currentCutPrice && currentCutPrice > 0 ? (
                 <span className="text-xs text-[#9eaaa0] line-through font-normal">
-                  ₹{currentCutPrice.toLocaleString('en-IN')}
+                  ₹{currentCutPrice.toLocaleString(currentLocale())}
                 </span>
               ) : currentMrp > currentPrice ? (
                 <span className="text-xs text-[#9eaaa0] line-through font-normal">
-                  ₹{currentMrp.toLocaleString('en-IN')}
+                  ₹{currentMrp.toLocaleString(currentLocale())}
                 </span>
               ) : null}
               <span className="text-xl font-black text-[#00450d]">
-                ₹{displayPrice.toLocaleString('en-IN')}
+                ₹{displayPrice.toLocaleString(currentLocale())}
               </span>
             </div>
           </div>
@@ -462,7 +473,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
                 className="bg-[#00450d] hover:bg-[#1b5e20] text-white font-black text-sm px-2 py-2 rounded-xl flex items-center gap-2 transition-all active:scale-95 shadow-md cursor-pointer"
               >
                 <ShoppingBag size={18} />
-                <span>ADD TO CART</span>
+                <span>{t('product.addToCart')}</span>
               </button>
             )}
 
@@ -470,9 +481,9 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
               type="button"
               onClick={onOpenCart}
               className="bg-[#e8f5e9] text-[#1b5e20] hover:bg-[#a0f399] font-bold text-xs p-2 rounded-xl transition-colors cursor-pointer"
-              title="View Cart"
+              title={t('product.viewCart')}
             >
-              Thela 🛒
+              {t('product.cartButton')}
             </button>
           </div>
         </div>

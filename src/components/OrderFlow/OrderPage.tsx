@@ -17,6 +17,9 @@ import { ApiOrder } from '@/types/OrderType';
 import { useGetOrder } from '@/lib/api and mutation/Order/useOrder';
 import { useRepeatOrder } from '@/lib/api and mutation/Order/useRepeatOrder';
 import { useAuthContext } from '@/context/AuthContext';
+import { PreorderHistoryCard } from './PreorderHistoryCard';
+import { useTranslation } from 'react-i18next';
+import { currentLocale } from '@/i18n';
 
 interface OrdersPageProps {
   onBack: () => void;
@@ -30,6 +33,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
   onGoToShop,
 }) => {
   const { repeatOrder, isRepeating } = useRepeatOrder();
+  const { t } = useTranslation();
   const { data: orderData, isLoading, isError, error, refetch } = useGetOrder();
 
   const {isAuthenticated} = useAuthContext()
@@ -44,16 +48,16 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
               type="button"
               onClick={onBack}
               className="p-1 -ml-1 text-[#1b1c1c] hover:bg-black/5 rounded-full transition-colors cursor-pointer"
-              aria-label="Back"
+              aria-label={t('common.back')}
             >
               <ArrowLeft size={22} strokeWidth={2.2} />
             </button>
             <div>
               <h1 className="font-bold text-base sm:text-lg text-[#1b1c1c] tracking-tight">
-                Order History
+                {t('orders.title')}
               </h1>
               <p className="text-[11px] text-[#525e54]">
-                Aapke pichle sabzi mandi orders
+                {t('orders.subtitle')}
               </p>
             </div>
           </div>
@@ -68,10 +72,10 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
 
             <div className="space-y-1.5">
               <h2 className="text-lg sm:text-xl font-extrabold text-[#1b1c1c]">
-                Please Log In
+                {t('orders.loginTitle')}
               </h2>
               <p className="text-xs sm:text-sm text-[#525e54] leading-relaxed">
-                Apne orders aur purchase history dekhne ke liye kripya apne account me login karein.
+                {t('orders.loginDesc')}
               </p>
             </div>
 
@@ -81,7 +85,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
                 className="w-full inline-flex items-center justify-center gap-2 bg-[#00450d] hover:bg-[#1b5e20] active:scale-[0.98] text-white font-bold text-sm px-6 py-3 rounded-xl shadow-md transition-all cursor-pointer"
               >
                 <LogIn size={16} />
-                <span>Login to Your Account</span>
+                <span>{t('orders.loginButton')}</span>
               </Link>
 
               <button
@@ -89,7 +93,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
                 onClick={onGoToShop}
                 className="w-full text-xs font-semibold text-[#525e54] hover:text-[#00450d] py-1.5 transition-colors cursor-pointer"
               >
-                Continue Shopping
+                {t('orders.continueShopping')}
               </button>
             </div>
           </div>
@@ -108,13 +112,21 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
     return [];
   }, [orderData]);
 
+  // Pre-orders come from the same API (orderType: 'PREORDER')
+  const preorders = orders
+    .filter((o) => o.orderType === 'PREORDER')
+    .sort((a, b) =>
+      (a.scheduledAt || '').localeCompare(b.scheduledAt || '')
+    );
+  const normalOrders = orders.filter((o) => o.orderType !== 'PREORDER');
+
   // Format date helper: "16 Oct 2026, 05:30 PM"
   const formatOrderDate = (isoString?: string) => {
     if (!isoString) return '';
     try {
       const d = new Date(isoString);
       if (isNaN(d.getTime())) return isoString;
-      return d.toLocaleDateString('en-IN', {
+      return d.toLocaleDateString(currentLocale(), {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -136,28 +148,28 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
         return (
           <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
             <Clock size={12} className="text-amber-600" />
-            <span>Pending</span>
+            <span>{t('orders.status.pending')}</span>
           </span>
         );
       case 'PACKED':
         return (
           <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-800 border border-blue-200/80 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
             <Package size={12} className="text-blue-600" />
-            <span>Packed</span>
+            <span>{t('orders.status.packed')}</span>
           </span>
         );
       case 'ASSIGNED':
         return (
           <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-800 border border-indigo-200/80 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
             <Truck size={12} className="text-indigo-600" />
-            <span>Assigned</span>
+            <span>{t('orders.status.assigned')}</span>
           </span>
         );
       case 'DISPATCHED':
         return (
           <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-300 text-[11px] font-bold px-2.5 py-0.5 rounded-full animate-pulse">
             <Zap size={12} fill="currentColor" className="text-emerald-600" />
-            <span>On The Way</span>
+            <span>{t('orders.status.onTheWay')}</span>
           </span>
         );
       case 'DELIVERED':
@@ -165,19 +177,19 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
         return (
           <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
             <CheckCircle2 size={12} className="text-emerald-600" />
-            <span>Delivered</span>
+            <span>{t('orders.status.delivered')}</span>
           </span>
         );
       case 'CANCELLED':
         return (
           <span className="inline-flex items-center gap-1 bg-red-50 text-red-700 border border-red-200 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
-            <span>Cancelled</span>
+            <span>{t('orders.status.cancelled')}</span>
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 border border-gray-200 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
-            <span>{status || 'Order Placed'}</span>
+            <span>{status || t('orders.status.placed')}</span>
           </span>
         );
     }
@@ -192,22 +204,22 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
             type="button"
             onClick={onBack}
             className="p-1 -ml-1 text-[#1b1c1c] hover:bg-black/5 rounded-full transition-colors cursor-pointer"
-            aria-label="Back"
+            aria-label={t('common.back')}
           >
             <ArrowLeft size={22} strokeWidth={2.2} />
           </button>
           <div>
             <h1 className="font-bold text-base sm:text-lg text-[#1b1c1c] tracking-tight">
-              Order History
+              {t('orders.title')}
             </h1>
             <p className="text-[11px] text-[#525e54]">
-              Aapke pichle sabzi mandi orders
+              {t('orders.subtitle')}
             </p>
           </div>
         </div>
 
         <span className="bg-[#e8f5e9] text-[#1b5e20] text-xs font-bold px-2.5 py-1 rounded-full border border-[#2e7d32]/20">
-          {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
+          {t('orders.count', { count: orders.length })}
         </span>
       </div>
 
@@ -238,17 +250,36 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
         {!isLoading && isError && (
           <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-center space-y-2">
             <AlertCircle size={28} className="text-red-500 mx-auto" />
-            <h3 className="font-bold text-sm text-red-900">Orders load nahi ho paye</h3>
+            <h3 className="font-bold text-sm text-red-900">{t('orders.loadError')}</h3>
             <p className="text-xs text-red-700">
-              {(error as any)?.response?.data?.message || (error as any)?.message || 'Kripya dobara koshish karein.'}
+              {(error as any)?.response?.data?.message || (error as any)?.message || t('orders.tryAgainDesc')}
             </p>
             <button
               type="button"
               onClick={() => refetch()}
               className="mt-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-colors cursor-pointer"
             >
-              Dobara Try Karein
+              {t('orders.tryAgain')}
             </button>
+          </div>
+        )}
+
+        {/* Pre-orders (Scheduled) */}
+        {!isLoading && !isError && preorders.length > 0 && (
+          <div className="space-y-2.5">
+            <h2 className="font-extrabold text-sm text-[#1b1c1c]">
+              {t('orders.preordersTitle')} <span className="text-xs font-normal text-[#525e54]">{t('orders.scheduled')}</span>
+            </h2>
+            {preorders.map((p) => (
+              <PreorderHistoryCard
+                key={p.id}
+                order={p}
+                statusBadge={renderStatusBadge(p.status)}
+              />
+            ))}
+            {normalOrders.length > 0 && (
+              <h2 className="font-extrabold text-sm text-[#1b1c1c] pt-2">{t('orders.pastOrders')}</h2>
+            )}
           </div>
         )}
 
@@ -258,16 +289,16 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
             <div className="w-16 h-16 rounded-full bg-[#e8f5e9] text-[#1b5e20] flex items-center justify-center mx-auto mb-3">
               <Package size={32} />
             </div>
-            <h2 className="text-base font-bold text-[#1b1c1c]">Abhi tak koi order nahi hai</h2>
+            <h2 className="text-base font-bold text-[#1b1c1c]">{t('orders.emptyTitle')}</h2>
             <p className="text-xs text-[#525e54] mt-1 max-w-xs mx-auto">
-              Subah 4 AM ki taaza mandi sabziyan 10-15 minute mein apne ghar mangwayein.
+              {t('orders.emptyDesc')}
             </p>
             <button
               type="button"
               onClick={onGoToShop}
               className="mt-4 bg-[#00450d] hover:bg-[#1b5e20] text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow cursor-pointer transition-colors"
             >
-              Sabzi Mandi Dekhein
+              {t('cart.browse')}
             </button>
           </div>
         )}
@@ -275,7 +306,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
         {/* Orders List */}
         {!isLoading &&
           !isError &&
-          orders.map((order) => {
+          normalOrders.map((order) => {
             const shortOrderNo = order.orderNo
               ? order.orderNo.slice(0, 8).toUpperCase()
               : order.id.slice(0, 8).toUpperCase();
@@ -329,8 +360,8 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
                             {item.productName}
                           </p>
                           <p className="text-[11px] text-[#525e54]">
-                            {item.totalQuantity ? `${item.totalQuantity} kg` : `${item.productQuantity} kg`}
-                            {item.productCount ? ` • Qty: ${item.productCount}` : ''}
+                            {t('orders.kg', { qty: item.totalQuantity || item.productQuantity })}
+                            {item.productCount ? ` • ${t('orders.qty', { count: item.productCount })}` : ''}
                           </p>
                         </div>
                       </div>
@@ -348,11 +379,11 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
                 <div className="flex items-center justify-between pt-1 text-xs">
                   <div>
                     <span className="text-[11px] text-[#525e54]">
-                      {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
-                      {order.totalTax > 0 && ` • Tax: ₹${Number(order.totalTax).toFixed(2)}`}
+                      {t('orders.itemCount', { count: order.items.length })}
+                      {order.totalTax > 0 && ` • ${t('orders.tax', { amount: Number(order.totalTax).toFixed(2) })}`}
                     </span>
-                    <div className="font-bold text-xs text-[#1b1c1c]">Grand Total</div>
-                    {order.note && (<span>note: {order.note}</span>)}
+                    <div className="font-bold text-xs text-[#1b1c1c]">{t('orders.grandTotal')}</div>
+                    {order.note && (<span>{t('orders.note', { note: order.note })}</span>)}
                   </div>
 
                   <div className="text-right">
@@ -371,7 +402,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
                     className="flex items-center gap-1.5 text-xs font-bold text-[#1b5e20] hover:bg-[#e8f5e9] px-3 py-1.5 rounded-lg border border-[#2e7d32]/30 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <RotateCw size={13} className={isRepeating ? 'animate-spin' : ''} />
-                    <span>{isRepeating ? 'Adding...' : 'Repeat Order'}</span>
+                    <span>{isRepeating ? t('common.adding') : t('orders.repeat')}</span>
                   </button>
 
                   <button
@@ -379,7 +410,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
                     onClick={() => onViewOrderDetails(order.id)}
                     className="flex items-center gap-1 bg-[#00450d] hover:bg-[#1b5e20] text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition-transform active:scale-95 shadow-2xs cursor-pointer"
                   >
-                    <span>View More</span>
+                    <span>{t('orders.viewMore')}</span>
                     <ChevronRight size={14} strokeWidth={2.5} />
                   </button>
                 </div>

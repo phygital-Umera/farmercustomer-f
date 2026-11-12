@@ -21,6 +21,7 @@ import { useGetCart, useChangeCount } from '@/lib/api and mutation/cart/useCart'
 import { useOrderItem } from '@/lib/api and mutation/Order/useOrder';
 import { useGetAddress } from '@/lib/api and mutation/Order/useAdress';
 import { useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 interface CartPageProps {
   onBack: () => void;
@@ -54,6 +55,7 @@ export const CartPage: React.FC<CartPageProps> = ({
   } = useCart();
 
   const { mutate: placeOrder, isPending } = useOrderItem();
+  const { t } = useTranslation();
   const { data: getadress } = useGetAddress();
 
   const navigate = useNavigate();
@@ -112,7 +114,7 @@ export const CartPage: React.FC<CartPageProps> = ({
   const handlePlaceOrder = () => {
     const finalAddressId = addressId || selectedAddress?.id || address?.id;
     if (!finalAddressId) {
-      toast.error('Kripya delivery address chuniye (Please select delivery address)');
+      toast.error(t('toast.selectAddress'));
       onOpenAddressModal();
       return;
     }
@@ -256,14 +258,14 @@ export const CartPage: React.FC<CartPageProps> = ({
   }[] = [
     {
       id: 'cod',
-      title: 'Cash on Delivery (COD)',
-      description: 'Sabzi dekh kar delivery wale ko cash dein',
+      title: t('cart.codTitle'),
+      description: t('cart.codDesc'),
       icon: <Banknote size={20} className="text-[#1b5e20]" />,
     },
     {
       id: 'upi',
-      title: 'UPI (Google Pay / PhonePe / Paytm)',
-      description: 'Instant scan ya UPI ID se pay karein',
+      title: t('cart.upiTitle'),
+      description: t('cart.upiDesc'),
       icon: <QrCode size={20} className="text-[#1b5e20]" />,
     },
   ];
@@ -274,16 +276,16 @@ export const CartPage: React.FC<CartPageProps> = ({
         <div className="w-20 h-20 rounded-full bg-[#e8f5e9] flex items-center justify-center text-[#1b5e20] mb-4">
           <ShoppingBag size={40} />
         </div>
-        <h2 className="text-xl font-bold text-[#1b1c1c]">Aapka Thela Khali Hai!</h2>
+        <h2 className="text-xl font-bold text-[#1b1c1c]">{t('cart.emptyTitle')}</h2>
         <p className="text-xs text-[#525e54] mt-1 max-w-xs">
-          Subah ki taza sabziyan mandi se seedhe ghar mangwayein.
+          {t('cart.emptyDesc')}
         </p>
         <button
           type="button"
           onClick={onBack}
           className="mt-6 bg-[#00450d] text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow cursor-pointer"
         >
-          Sabzi Mandi Dekhein
+          {t('cart.browse')}
         </button>
       </div>
     );
@@ -306,10 +308,10 @@ export const CartPage: React.FC<CartPageProps> = ({
               className="flex items-center gap-1 text-sm sm:text-base font-bold text-[#1b1c1c] hover:text-[#00450d] transition-colors cursor-pointer shrink-0"
             >
               <ArrowLeft size={18} strokeWidth={2.5} />
-              <span>Back</span>
+              <span>{t('common.back')}</span>
             </button>
             <h1 className="text-base sm:text-xl font-black text-[#00450d] tracking-tight truncate">
-              Aapka Thela <span className="text-xs sm:text-sm font-semibold text-[#525e54]"></span>
+              {t('cart.title')} <span className="text-xs sm:text-sm font-semibold text-[#525e54]"></span>
             </h1>
           </div>
 
@@ -321,14 +323,14 @@ export const CartPage: React.FC<CartPageProps> = ({
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-[#1b5e20] uppercase tracking-wider flex items-center gap-1">
               <MapPin size={13} />
-              Delivery Address
+              {t('cart.deliveryAddress')}
             </span>
             <button
               type="button"
               onClick={onOpenAddressModal}
               className="text-xs font-bold text-[#00450d] hover:underline cursor-pointer"
             >
-              Change / Add
+              {t('cart.changeAdd')}
             </button>
           </div>
 
@@ -359,7 +361,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                         : 'bg-[#f9fbf9] text-[#525e54] border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    Address {idx + 1}
+                    {t('address.addressN', { n: idx + 1 })}
                   </button>
                 );
               })}
@@ -379,7 +381,7 @@ export const CartPage: React.FC<CartPageProps> = ({
               </p>
               {selectedAddress.contactNo && (
                 <p className="text-[#1b5e20] text-[11px] font-semibold mt-1">
-                  Contact: {selectedAddress.contactNo}
+                  {t('cart.contact', { no: selectedAddress.contactNo })}
                 </p>
               )}
             </div>
@@ -388,7 +390,7 @@ export const CartPage: React.FC<CartPageProps> = ({
               onClick={onOpenAddressModal}
               className="text-xs text-[#525e54] py-2 cursor-pointer text-center border border-dashed border-gray-300 rounded-xl hover:border-[#1b5e20] transition-colors"
             >
-              <p className="font-semibold text-[#00450d]">+ Select or Add Delivery Address</p>
+              <p className="font-semibold text-[#00450d]">{t('cart.selectAddress')}</p>
             </div>
           )}
         </div>
@@ -422,7 +424,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                         {item.name}
                       </h4>
                       <p className="text-xs text-[#525e54] font-medium mt-0.5">
-                        Vazan: {item.weightLabel}
+                        {t('cart.weight', { weight: item.weightLabel })}
                       </p>
                       <div className="mt-1">
                         <span className="font-black text-sm text-[#00450d]">
@@ -455,30 +457,30 @@ export const CartPage: React.FC<CartPageProps> = ({
             <div className="flex items-center gap-1.5">
               <Receipt size={16} className="text-[#1b5e20]" />
               <h3 className="font-extrabold text-sm text-[#1b1c1c]">
-                Bill Details
+                {t('cart.billDetails')}
               </h3>
             </div>
             <span className="bg-[#a0f399] text-[#00450d] text-[10px] font-black px-2 py-0.5 rounded-md uppercase">
-              No Hidden Charges
+              {t('cart.noHidden')}
             </span>
           </div>
 
           <div className="space-y-1.5 text-xs text-[#525e54]">
             <div className="flex justify-between">
-              <span>Total Items Price ({displayTotalCount} {displayTotalCount === 1 ? 'Chiz' : 'Chizein'})</span>
+              <span>{t('cart.itemsPrice', { count: displayTotalCount })}</span>
               <span className="font-bold text-[#1b1c1c]">₹{fmt3(displayItemsTotal)}</span>
             </div>
 
             <div className="flex justify-between">
-              <span>Delivery Charge</span>
-              <span className="font-bold text-[#1b5e20]">FREE</span>
+              <span>{t('cart.deliveryCharge')}</span>
+              <span className="font-bold text-[#1b5e20]">{t('common.free')}</span>
             </div>
           </div>
 
           <div className="pt-2 border-t border-[#e0e6e0] flex items-center justify-between">
             <div>
               <span className="text-xs font-black text-[#1b1c1c] block">
-                Kul Rakam / To Pay
+                {t('cart.toPay')}
               </span>
             </div>
             <span className="text-xl font-black text-[#00450d]">
@@ -492,7 +494,7 @@ export const CartPage: React.FC<CartPageProps> = ({
           <div className="flex items-center gap-1.5">
             <span className="text-base">💳</span>
             <h3 className="font-extrabold text-sm sm:text-base text-[#1b1c1c]">
-              Payment Kaise Karenge? <span className="text-xs font-normal text-[#525e54]">/ Pay Method</span>
+              {t('cart.payMethod')}
             </h3>
           </div>
 
@@ -552,7 +554,7 @@ export const CartPage: React.FC<CartPageProps> = ({
               </span>
             </div>
             <span className="text-[11px] font-bold text-[#1b5e20] flex items-center gap-0.5 group-hover:underline">
-              Bill Dekhein {showBillDetailModal ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
+              {t('cart.viewBill')} {showBillDetailModal ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
             </span>
           </button>
 
@@ -564,10 +566,10 @@ export const CartPage: React.FC<CartPageProps> = ({
           >
             <div className="text-left leading-tight min-w-0">
               <span className="block text-xs font-black tracking-wider uppercase truncate">
-                {isPending ? 'PLACING...' : 'ORDER KAREIN'}
+                {isPending ? t('cart.placing') : t('cart.placeOrder')}
               </span>
               <span className="block text-[10px] text-white/80 capitalize font-medium truncate">
-                {paymentMethod === 'cod' ? 'Cash on Delivery' : paymentMethod.toUpperCase()}
+                {paymentMethod === 'cod' ? t('common.cod') : paymentMethod.toUpperCase()}
               </span>
             </div>
 
@@ -576,7 +578,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                 <Loader2 size={14} className="animate-spin" />
               ) : (
                 <>
-                  <span>Place</span>
+                  <span>{t('cart.place')}</span>
                   <ArrowRight size={14} strokeWidth={2.5} />
                 </>
               )}
@@ -597,22 +599,22 @@ export const CartPage: React.FC<CartPageProps> = ({
           >
             <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto" />
             <h3 className="font-extrabold text-base text-[#1b1c1c]">
-              Complete Bill Breakdown
+              {t('cart.billBreakdown')}
             </h3>
 
             <div className="space-y-2 text-sm text-[#525e54]">
               <div className="flex justify-between">
-                <span>Items Subtotal</span>
+                <span>{t('cart.itemsSubtotal')}</span>
                 <span className="font-bold text-[#1b1c1c]">₹{fmt3(displayItemsTotal)}</span>
               </div>
 
               <div className="flex justify-between">
-                <span>Delivery Charge</span>
-                <span className="font-bold text-[#1b5e20]">FREE</span>
+                <span>{t('cart.deliveryCharge')}</span>
+                <span className="font-bold text-[#1b5e20]">{t('common.free')}</span>
               </div>
 
               <div className="pt-2 border-t border-gray-200 flex justify-between text-base font-black text-[#00450d]">
-                <span>Total Amount to Pay</span>
+                <span>{t('cart.totalToPay')}</span>
                 <span>₹{fmt3(displayFinalToPay)}</span>
               </div>
             </div>
@@ -622,7 +624,7 @@ export const CartPage: React.FC<CartPageProps> = ({
               onClick={() => setShowBillDetailModal(false)}
               className="w-full bg-[#00450d] text-white font-bold py-2.5 rounded-xl cursor-pointer"
             >
-              Theek Hai / OK
+              {t('common.ok')}
             </button>
           </div>
         </div>

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Store, LayoutGrid, ShoppingBag, FileText } from 'lucide-react';
+import { Store, LayoutGrid, ShoppingBag, FileText, CalendarClock } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { ActiveTab } from '@/types/OrderType';
+import { useTranslation } from 'react-i18next';
 
 
 interface BottomNavigationProps {
@@ -14,26 +15,32 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   onSelectTab,
 }) => {
   const { totalItemCount } = useCart();
+  const { t } = useTranslation();
 
   const tabs: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
     {
       id: 'home',
-      label: 'Home',
+      label: t('nav.home'),
       icon: <Store size={20} strokeWidth={activeTab === 'home' ? 2.5 : 2} />,
     },
     {
       id: 'categories',
-      label: 'Categories',
+      label: t('nav.categories'),
       icon: <LayoutGrid size={20} strokeWidth={activeTab === 'categories' ? 2.5 : 2} />,
     },
     {
+      id: 'preorder',
+      label: t('nav.preorder'),
+      icon: <CalendarClock size={20} strokeWidth={activeTab === 'preorder' ? 2.5 : 2} />,
+    },
+    {
       id: 'orders',
-      label: 'Orders',
+      label: t('nav.orders'),
       icon: <FileText size={20} strokeWidth={activeTab === 'orders' ? 2.5 : 2} />,
     },
     {
       id: 'cart',
-      label: 'Cart',
+      label: t('nav.cart'),
       icon: <ShoppingBag size={20} strokeWidth={activeTab === 'cart' ? 2.5 : 2} />,
     },
   ];

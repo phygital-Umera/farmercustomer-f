@@ -4,6 +4,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuthContext } from '@/context/AuthContext';
 import { useNavigate } from '@tanstack/react-router';
 import { useAddToCart } from '@/lib/api and mutation/cart/useCart';
+import { useTranslation } from 'react-i18next';
 
 interface FloatingCartDockProps {
   onViewCart: () => void;
@@ -14,6 +15,7 @@ export const FloatingCartDock: React.FC<FloatingCartDockProps> = ({ onViewCart }
   const { totalItemCount, finalToPay, items, getApiCartItems } = useCart();
   const { mutate: addToCartApi, isPending } = useAddToCart();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   if (totalItemCount === 0) return null;
 
@@ -21,7 +23,7 @@ export const FloatingCartDock: React.FC<FloatingCartDockProps> = ({ onViewCart }
   const sampleItems = items.slice(0, 2);
 
   return (
-    <aside aria-label="Cart preview" className="fixed bottom-16 left-0 right-0 z-30 px-3 py-1 mb-2 pointer-events-none">
+    <aside aria-label={t('cartDock.preview')} className="fixed bottom-16 left-0 right-0 z-30 px-3 py-1 mb-2 pointer-events-none">
       <div className="max-w-md mx-auto pointer-events-auto">
         <div className="bg-[#00450d] text-white rounded-2xl p-3 shadow-[0_8px_24px_rgba(0,69,13,0.35)] flex items-center justify-between gap-3 border border-emerald-800/40 animate-in slide-in-from-bottom duration-200">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -49,11 +51,11 @@ export const FloatingCartDock: React.FC<FloatingCartDockProps> = ({ onViewCart }
                   ₹{finalToPay}
                 </span>
                 <span className="text-xs text-white/80 font-medium">
-                  ({totalItemCount} {totalItemCount === 1 ? 'Item' : 'Items'})
+                  ({t('common.items', { count: totalItemCount })})
                 </span>
               </div>
               <div className="text-[11px] text-[#a0f399] font-medium flex items-center gap-1">
-                <span>12 mins delivery to your door</span>
+                <span>{t('cartDock.eta')}</span>
               </div>
             </div>
           </div>
@@ -79,11 +81,11 @@ export const FloatingCartDock: React.FC<FloatingCartDockProps> = ({ onViewCart }
               {isPending ? (
                 <>
                   <Loader2 size={15} className="animate-spin" />
-                  <span>Adding...</span>
+                  <span>{t('common.adding')}</span>
                 </>
               ) : (
                 <>
-                  <span>Add Cart</span>
+                  <span>{t('cartDock.addCart')}</span>
                   <ArrowRight size={15} strokeWidth={2.5} />
                 </>
               )}
@@ -94,7 +96,7 @@ export const FloatingCartDock: React.FC<FloatingCartDockProps> = ({ onViewCart }
               onClick={() => navigate({ to: '/signin' })}
               className="bg-white hover:bg-[#f0f4f0] text-[#00450d] font-bold text-xs sm:text-sm px-4 py-2 rounded-xl flex items-center gap-1 shrink-0 transition-transform active:scale-95 shadow-sm cursor-pointer"
             >
-              <span>Login to Order</span>
+              <span>{t('cartDock.loginToOrder')}</span>
               <ArrowRight size={15} strokeWidth={2.5} />
             </button>
           )}

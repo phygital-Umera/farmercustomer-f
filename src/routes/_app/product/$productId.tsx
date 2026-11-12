@@ -9,6 +9,7 @@ import { useGetAllProducts } from '@/lib/api and mutation/product/useProductApi'
 import { mapApiProductToProduct } from '@/utils/productMapper';
 import { ActiveTab, Product } from '@/types/OrderType';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/_app/product/$productId')({
   component: ProductDetailRouteWrapper,
@@ -17,6 +18,7 @@ export const Route = createFileRoute('/_app/product/$productId')({
 function ProductDetailContent() {
   const navigate = useNavigate();
   const { productId } = Route.useParams();
+  const { t } = useTranslation();
   const [showAddressModal, setShowAddressModal] = useState(false);
   const { data: productsData } = useGetAllProducts();
 
@@ -36,6 +38,7 @@ function ProductDetailContent() {
 
   const handleSelectTab = (tab: ActiveTab) => {
     if (tab === 'home') navigate({ to: '/' });
+    else if (tab === 'preorder') navigate({ to: '/preorder' });
     else if (tab === 'cart') navigate({ to: '/cart' });
     else if (tab === 'orders') navigate({ to: '/orders' });
     else navigate({ to: '/' });
@@ -45,13 +48,13 @@ function ProductDetailContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#fcf9f8]">
         <div className="text-center space-y-3">
-          <p className="text-[#525e54] font-medium">Product not found</p>
+          <p className="text-[#525e54] font-medium">{t('product.notFound')}</p>
           <button
             type="button"
             onClick={() => navigate({ to: '/' })}
             className="bg-[#00450d] text-white font-bold px-6 py-2.5 rounded-xl text-sm cursor-pointer"
           >
-            Back to Home
+            {t('product.backHome')}
           </button>
         </div>
       </div>

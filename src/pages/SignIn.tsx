@@ -10,12 +10,14 @@ import {LuEyeOff} from 'react-icons/lu';
 import {Sprout} from 'lucide-react';
 import {z} from 'zod';
 import toast from 'react-hot-toast';
+import {useTranslation} from 'react-i18next';
 
 
 type SignInFormValues = z.infer<typeof signInSchema>;
 
 const SignIn: React.FC = () => {
   const navigate = useNavigate();
+  const {t} = useTranslation();
   const {mutateAsync: signIn, isError, isPending} = useCustomerLogin();
   const {
     register,
@@ -47,7 +49,7 @@ const SignIn: React.FC = () => {
   //   }
   // }, [isAuthenticated, navigate]);
   const onSubmit = async (values: SignInFormValues) => {
-    const toastId = toast.loading('Logging in...');
+    const toastId = toast.loading(t('auth.loggingIn'));
     try {
         const payload={
           ...values,
@@ -64,12 +66,12 @@ const SignIn: React.FC = () => {
         login(accessToken, userData, refreshToken);
       }
 
-      toast.success('Login successful!', { id: toastId });
+      toast.success(t('auth.loginSuccess'), { id: toastId });
       navigate({ to: '/' });
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(
-        error?.response?.data?.message || 'Login failed. Please try again.',
+        error?.response?.data?.message || t('auth.loginFailed'),
         { id: toastId }
       );
     }
@@ -93,10 +95,10 @@ const SignIn: React.FC = () => {
               <Sprout size={32} strokeWidth={2.4} />
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#00450d]">
-              Apna Sabzi Mandi
+              {t('header.brand')}
             </h2>
             <p className="mt-1 text-xs sm:text-sm font-medium text-[#525e54]">
-              Sign in to manage your orders &amp; fresh mandi savings
+              {t('auth.tagline')}
             </p>
           </div>
 
@@ -107,12 +109,12 @@ const SignIn: React.FC = () => {
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#1b1c1c]">
                   <FiUser className="text-[#1b5e20]" />
-                  User ID / Phone Number
+                  {t('auth.userIdLabel')}
                 </label>
                 <div className="group/input relative">
                   <input
                     type="text"
-                    placeholder="Enter your User ID or Mobile"
+                    placeholder={t('auth.userIdPlaceholder')}
                     {...register('username')}
                     className={`w-full rounded-xl border bg-[#fcf9f8] px-4 py-3 text-sm text-[#1b1c1c] placeholder:text-[#717a6d] outline-none transition-all duration-200 ${
                       errors.username
@@ -128,7 +130,7 @@ const SignIn: React.FC = () => {
                 </div>
                 {errors.username && (
                   <p className="animate-shake flex items-center gap-1 text-xs font-medium text-red-600">
-                    <span>•</span> {errors.username.message}
+                    <span>•</span> {t(errors.username.message || '')}
                   </p>
                 )}
               </div>
@@ -137,12 +139,12 @@ const SignIn: React.FC = () => {
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#1b1c1c]">
                   <FiLock className="text-[#1b5e20]" />
-                  Password
+                  {t('auth.password')}
                 </label>
                 <div className="group/input relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
+                    placeholder={t('auth.passwordPlaceholder')}
                     {...register('password')}
                     className={`w-full rounded-xl border bg-[#fcf9f8] px-4 py-3 text-sm text-[#1b1c1c] placeholder:text-[#717a6d] outline-none transition-all duration-200 ${
                       errors.password
@@ -164,7 +166,7 @@ const SignIn: React.FC = () => {
                 </div>
                 {errors.password && (
                   <p className="animate-shake flex items-center gap-1 text-xs font-medium text-red-600">
-                    <span>•</span> {errors.password.message}
+                    <span>•</span> {t(errors.password.message || '')}
                   </p>
                 )}
               </div>
@@ -177,7 +179,7 @@ const SignIn: React.FC = () => {
                   className="w-full transform rounded-xl bg-[#00450d] px-6 py-3.5 text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#1b5e20] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                 >
                   <span>
-                    {isSubmitting ? 'Signing in...' : 'Sign in to Apna Mandi'}
+                    {isSubmitting ? t('auth.signingIn') : t('auth.signIn')}
                   </span>
                 </button>
               </div>
@@ -189,14 +191,14 @@ const SignIn: React.FC = () => {
     className="group inline-flex items-center gap-1.5 text-xs font-semibold text-[#1b5e20] transition-all hover:text-[#00450d]"
   >
     <FiArrowLeft className="text-sm transition-transform group-hover:-translate-x-0.5" />
-    <span>Sabzi Mandi Dekhein</span>
+    <span>{t('cart.browse')}</span>
   </Link>
 
   <Link
     to="/register"
     className="text-xs font-semibold text-[#1b5e20] transition-colors hover:text-[#00450d]"
   >
-    Don't have an account? <span className="underline">Register</span>
+    {t('auth.noAccount')} <span className="underline">{t('auth.register')}</span>
   </Link>
 </div>
             </form>
@@ -204,7 +206,7 @@ const SignIn: React.FC = () => {
 
           {/* Footer */}
           <p className="mt-6 text-center text-xs font-medium text-[#525e54]">
-            © 2026 Apna Sabzi Mandi • 100% Certified Wazan &amp; Farm Fresh
+            {t('auth.footer')}
           </p>
         </div>
       </div>

@@ -2,6 +2,7 @@ import React, { useMemo, useEffect } from 'react';
 import { Sprout, ChevronDown, User, MapPin } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useGetAddress } from '@/lib/api and mutation/Order/useAdress';
+import { useTranslation } from 'react-i18next';
 
 interface HeaderProps {
   onOpenAddress?: () => void;
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenAddress, onOpenProfile }) => {
   const { address, setAddress } = useCart();
+  const { t } = useTranslation();
   const { data: addressResponse } = useGetAddress();
 
   // Safely extract address list from API
@@ -62,11 +64,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddress, onOpenProfile }) 
       return `${address.city} ${address.pincode}`;
     }
     if (address?.pincode) {
-      return `Pincode: ${address.pincode}`;
+      return t('header.pincode', { pincode: address.pincode });
     }
 
-    return 'Select Location';
-  }, [address, addressList]);
+    return t('header.selectLocation');
+  }, [address, addressList, t]);
 
   return (
     <header className="sticky top-0 z-40 bg-[#fcf9f8]/95 backdrop-blur-md px-4 pt-3 pb-2 border-b border-black/[0.04]">
@@ -76,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddress, onOpenProfile }) 
           <div className="flex items-center gap-1.5 text-[#00450d]">
             <Sprout size={20} className="stroke-[2.4] text-[#1b5e20]" />
             <span className="font-bold text-lg sm:text-xl tracking-tight leading-none text-[#00450d]">
-              Apna Sabzi Mandi
+              {t('header.brand')}
             </span>
           </div>
 
@@ -89,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddress, onOpenProfile }) 
           >
             <MapPin size={12} className="text-[#1b5e20] shrink-0" />
             <span className="font-medium truncate max-w-[210px] sm:max-w-xs">
-              Deliver to: <span className="text-[#1b1c1c] font-semibold">{displayAddress}</span> (10-15 mins)
+              {t('header.deliverTo')} <span className="text-[#1b1c1c] font-semibold">{displayAddress}</span> {t('header.eta')}
             </span>
             <ChevronDown size={13} className="text-[#41493e] group-hover:translate-y-0.5 transition-transform shrink-0" />
           </button>
@@ -100,7 +102,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddress, onOpenProfile }) 
           type="button"
           onClick={onOpenProfile}
           className="w-9 h-9 rounded-full bg-[#00450d] text-white flex items-center justify-center hover:bg-[#1b5e20] transition-colors shadow-sm shrink-0 cursor-pointer"
-          aria-label="User Profile"
+          aria-label={t('header.profile')}
         >
           <User size={18} />
         </button>

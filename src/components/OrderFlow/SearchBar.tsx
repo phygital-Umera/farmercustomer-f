@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Mic, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface SearchBarProps {
   value: string;
@@ -11,10 +12,11 @@ interface SearchBarProps {
 export const SearchBar: React.FC<SearchBarProps> = ({
   value,
   onChange,
-  placeholder = 'Search potato, onion, tomato, palak...',
+  placeholder,
   onVoiceSearch,
 }) => {
   const [isListening, setIsListening] = useState(false);
+  const { t, i18n } = useTranslation();
 
   const handleVoiceToggle = () => {
     if (onVoiceSearch) {
@@ -29,7 +31,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).SpeechRecognition ||
           (window as unknown as { webkitSpeechRecognition?: any }).webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
-        recognition.lang = 'en-IN';
+        recognition.lang = `${i18n.language || 'en'}-IN`;
         recognition.continuous = false;
         setIsListening(true);
         recognition.onresult = (event: any) => {
@@ -63,7 +65,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t('search.placeholder')}
           className="w-full bg-transparent text-sm text-[#1b1c1c] placeholder:text-[#717a6d] outline-none font-medium"
         />
 
@@ -72,7 +74,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             type="button"
             onClick={() => onChange('')}
             className="p-1 text-[#717a6d] hover:text-[#1b1c1c] mr-1"
-            aria-label="Clear search"
+            aria-label={t('search.clear')}
           >
             <X size={15} />
           </button>
@@ -84,8 +86,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           className={`p-1 text-[#1b5e20] hover:text-[#00450d] transition-colors rounded-full ${
             isListening ? 'animate-pulse bg-emerald-100 text-emerald-800 p-1.5' : ''
           }`}
-          title={isListening ? 'Listening...' : 'Voice Search'}
-          aria-label="Voice Search"
+          title={isListening ? t('search.listening') : t('search.voice')}
+          aria-label={t('search.voice')}
         >
           <Mic size={18} className={isListening ? 'text-emerald-700' : 'text-[#1b5e20]'} />
         </button>

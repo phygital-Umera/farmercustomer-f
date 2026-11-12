@@ -77,7 +77,7 @@ export type DeliveryInstruction = 'ring_bell' | 'leave_door' | 'do_not_ring';
 
 export type PaymentMethod = 'cod' | 'upi' | 'card';
 
-export type ActiveTab = 'home' | 'categories' | 'offers' | 'cart' | 'orders';
+export type ActiveTab = 'home' | 'categories' | 'offers' | 'cart' | 'orders' | 'preorder';
 
 export type ViewState =
   | { type: 'home' }
@@ -181,6 +181,10 @@ export interface ApiOrder {
   items: ApiOrderItem[];
   admin?: ApiAdmin;
   deliveryBoy?: ApiDeliveryBoy | null;
+  orderType?: 'NORMAL' | 'PREORDER' | string;
+  scheduledAt?: string | null;
+  note?: string | null;
+  address?: any;
 }
 
 export interface ApiOrdersResponse {
@@ -197,4 +201,46 @@ export interface ApiOrdersResponse {
     };
   };
   errors?: any;
+}
+// ---------- Pre-orders (advance booking for a future date/slot) ----------
+export interface PreorderItem {
+  productId: string;
+  name: string;
+  image: string;
+  weight: string;
+  productQuantity: number;
+  unit?: string;
+  price: number;
+  count: number;
+}
+
+export interface Preorder {
+  id: string;
+  createdAt: string;
+  deliveryDate: string; // 'YYYY-MM-DD'
+  timeSlot: { id: string; label: string };
+  address: {
+    id: string;
+    address: string;
+    landmark?: string;
+    pincode?: string;
+    contactNo?: string;
+  };
+  items: PreorderItem[];
+  total: number;
+  status: 'SCHEDULED' | 'CANCELLED';
+}
+
+// Body for POST /customer/orders/pre-order
+export interface CreatePreorderInput {
+  addressId: string;
+  preOrderDate: string; // 'YYYY-MM-DD'
+  preOrderTime: string; // 'HH:mm'
+  items: {
+    productId: string;
+    productQuantity: number;
+    productCount: number;
+    price?: number;
+  }[];
+  note?: string;
 }

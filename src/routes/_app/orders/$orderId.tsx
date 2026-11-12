@@ -15,6 +15,7 @@ function OrderDetailContent() {
   const handleSelectTab = (tab: ActiveTab) => {
     if (tab === 'orders') navigate({ to: '/orders' });
     else if (tab === 'home') navigate({ to: '/' });
+    else if (tab === 'preorder') navigate({ to: '/preorder' });
     else if (tab === 'cart') navigate({ to: '/cart' });
     else navigate({ to: '/' });
   };

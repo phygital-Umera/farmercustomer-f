@@ -10,7 +10,10 @@ import { OffersModal } from './OffersModal';
 import { useGetAllProducts } from '@/lib/api and mutation/product/useProductApi';
 import { mapApiProductToProduct } from '@/utils/productMapper';
 import { ActiveTab, Order, Product } from '@/types/OrderType';
-import { Phone, Sparkles, X, ChevronRight, Package, MapPin, Tag, LogOut } from 'lucide-react';
+import { Phone, Sparkles, X, ChevronRight, Package, MapPin, Tag, LogOut, Languages } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { SUPPORTED_LANGUAGES, setLanguage } from '@/i18n';
+import { getUserId } from '@/i18n/languageStorage';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuthContext } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
@@ -24,18 +27,20 @@ const OrderFlowContent: React.FC = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   const { address, repeatOrder } = useCart();
-  const { isAuthenticated, logout } = useAuthContext();
+  const { isAuthenticated, logout, user } = useAuthContext();
+  const { t, i18n } = useTranslation();
 
   const handleLogout = () => {
     setShowProfileModal(false);
     logout();
-    toast.success('Logged out');
+    toast.success(t('toast.loggedOut'));
     navigate({ to: '/signin' });
   };
 
   // Bottom Navigation tab selection
   const handleSelectTab = (tab: ActiveTab) => {
     if (tab === 'home') navigate({ to: '/' });
+    else if (tab === 'preorder') navigate({ to: '/preorder' });
     else if (tab === 'cart') navigate({ to: '/cart' });
     else if (tab === 'orders') navigate({ to: '/orders' });
     else if (tab === 'categories') setShowCategoriesModal(true);
@@ -134,10 +139,10 @@ const OrderFlowContent: React.FC = () => {
 
             <div className="bg-[#e8f5e9] p-3 rounded-2xl text-xs space-y-1">
               <span className="font-extrabold text-[#1b5e20] flex items-center gap-1">
-                <Sparkles size={13} /> Apna Sabzi Mandi Member
+                <Sparkles size={13} /> {t('profile.member')}
               </span>
               <p className="text-[#41493e]">
-                Default Address: {address.flat}, {address.city}
+                {t('profile.defaultAddress')} {address.flat}, {address.city}
               </p>
             </div>
 
@@ -152,7 +157,7 @@ const OrderFlowContent: React.FC = () => {
               >
                 <span className="flex items-center gap-2">
                   <Package size={15} className="text-[#1b5e20]" />
-                  <span>My Orders &amp; Delivery Tracking</span>
+                  <span>{t('profile.myOrders')}</span>
                 </span>
                 <ChevronRight size={14} className="text-gray-400" />
               </button>
@@ -167,7 +172,7 @@ const OrderFlowContent: React.FC = () => {
               >
                 <span className="flex items-center gap-2">
                   <MapPin size={15} className="text-[#1b5e20]" />
-                  <span>Manage Delivery Addresses</span>
+                  <span>{t('profile.manageAddresses')}</span>
                 </span>
                 <ChevronRight size={14} className="text-gray-400" />
               </button>
@@ -182,10 +187,37 @@ const OrderFlowContent: React.FC = () => {
               >
                 <span className="flex items-center gap-2">
                   <Tag size={15} className="text-[#1b5e20]" />
-                  <span>Mandi Savings &amp; Bachat</span>
+                  <span>{t('profile.savings')}</span>
                 </span>
                 <ChevronRight size={14} className="text-gray-400" />
               </button>
+            </div>
+
+            {/* Set Language */}
+            <div className="rounded-xl border border-gray-100 p-2.5 space-y-2 text-xs">
+              <span className="flex items-center gap-2 font-medium text-[#1b1c1c]">
+                <Languages size={15} className="text-[#1b5e20]" />
+                {t('profile.setLanguage')}
+              </span>
+              <div className="grid grid-cols-3 gap-1.5">
+                {SUPPORTED_LANGUAGES.map((lang) => {
+                  const active = i18n.language === lang.code;
+                  return (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() =>
+                        setLanguage(lang.code, isAuthenticated ? getUserId(user) || 'customer' : null)
+                      }
+                      className={`py-1.5 rounded-lg font-bold cursor-pointer transition-colors ${
+                        active ? 'bg-[#00450d] text-white' : 'bg-gray-50 text-[#1b1c1c] hover:bg-gray-100'
+                      }`}
+                    >
+                      {lang.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {isAuthenticated && (
@@ -195,7 +227,7 @@ const OrderFlowContent: React.FC = () => {
                 className="w-full flex items-center justify-center gap-2 border border-red-200 bg-white hover:bg-red-50 text-red-600 font-bold py-2.5 rounded-xl text-xs cursor-pointer transition-colors"
               >
                 <LogOut size={15} />
-                Logout
+                {t('profile.logout')}
               </button>
             )}
 
@@ -204,7 +236,7 @@ const OrderFlowContent: React.FC = () => {
               onClick={() => setShowProfileModal(false)}
               className="w-full bg-[#00450d] text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer"
             >
-              Close
+              {t('common.close')}
             </button>
           </div>
         </div>

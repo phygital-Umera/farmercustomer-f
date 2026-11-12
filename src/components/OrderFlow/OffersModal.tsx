@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Tag, Gift, Sparkles, Check } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useTranslation } from 'react-i18next';
 
 interface OffersModalProps {
   onClose: () => void;
@@ -8,27 +9,28 @@ interface OffersModalProps {
 
 export const OffersModal: React.FC<OffersModalProps> = ({ onClose }) => {
   const { discountTotal, hasFreeGift } = useCart();
+  const { t } = useTranslation();
 
   const offers = [
     {
       code: 'MANDIFRESH',
-      title: 'Flat ₹10 Off on Fresh Veggies',
-      description: 'Auto-applied directly at checkout on fresh morning harvest orders.',
-      tag: 'ACTIVE',
+      title: t('offers.fresh.title'),
+      description: t('offers.fresh.desc'),
+      tag: t('offers.fresh.tag'),
       color: 'bg-emerald-50 text-emerald-800 border-emerald-200',
     },
     {
       code: 'SHAGUN',
-      title: 'Muft Nimbu, Dhaniya aur Mirchi',
-      description: 'Free Mandi Shagun pack added to every single order above ₹0.',
-      tag: 'FREE GIFT',
+      title: t('offers.shagun.title'),
+      description: t('offers.shagun.desc'),
+      tag: t('offers.shagun.tag'),
       color: 'bg-amber-50 text-amber-900 border-amber-200',
     },
     {
       code: 'FREESHIP',
-      title: 'Free 10-15 Min Express Delivery',
-      description: 'Zero delivery charges on all cart totals of ₹49 and above.',
-      tag: 'FREE DELIVERY',
+      title: t('offers.ship.title'),
+      description: t('offers.ship.desc'),
+      tag: t('offers.ship.tag'),
       color: 'bg-blue-50 text-blue-900 border-blue-200',
     },
   ];
@@ -39,7 +41,7 @@ export const OffersModal: React.FC<OffersModalProps> = ({ onClose }) => {
         <div className="flex items-center justify-between pb-2 border-b border-gray-100">
           <div className="flex items-center gap-2 text-[#00450d]">
             <Tag size={20} />
-            <h3 className="font-extrabold text-lg">Mandi Offers &amp; Bachat</h3>
+            <h3 className="font-extrabold text-lg">{t('offers.title')}</h3>
           </div>
           <button
             type="button"
@@ -75,7 +77,7 @@ export const OffersModal: React.FC<OffersModalProps> = ({ onClose }) => {
           onClick={onClose}
           className="w-full bg-[#00450d] text-white font-bold py-2.5 rounded-xl cursor-pointer"
         >
-          Close / Band Karein
+          {t('common.close')}
         </button>
       </div>
     </div>

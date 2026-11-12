@@ -22,6 +22,9 @@ import { Order, ApiOrder } from '@/types/OrderType';
 import { useGetOrder } from '@/lib/api and mutation/Order/useOrder';
 import { generateOrderInvoice } from '@/utils/generateInvoice';
 import { useRepeatOrder } from '@/lib/api and mutation/Order/useRepeatOrder';
+import { useGetContactNumbers } from '@/lib/api and mutation/settings/useSettings';
+import { useTranslation } from 'react-i18next';
+import { currentLocale } from '@/i18n';
 
 interface OrderDetailsPageProps {
   orderId: string;
@@ -33,8 +36,37 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
   onBack,
 }) => {
   const { getOrderById } = useCart();
+  const { t } = useTranslation();
   const { data: apiOrderData } = useGetOrder();
   const { repeatOrder, isRepeating } = useRepeatOrder();
+  const { data: contactNumbers = [] } = useGetContactNumbers();
+
+  const contactList = (
+    <div className="space-y-1.5">
+      {contactNumbers.map((c, i) => (
+        <a
+          key={`${c.number}-${i}`}
+          href={`tel:${c.number.replace(/[^\d+]/g, '')}`}
+          className="flex items-center justify-between gap-2 rounded-xl bg-[#f0eded] px-3 py-2 text-xs"
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <Phone size={14} className="shrink-0 text-[#1b5e20]" />
+            <span className="min-w-0 text-left">
+              {c.label && (
+                <span className="block text-[10px] font-semibold uppercase text-[#525e54]">
+                  {c.label}
+                </span>
+              )}
+              <span className="block truncate font-bold text-[#00450d]">{c.number}</span>
+            </span>
+          </span>
+          <span className="shrink-0 rounded-full bg-[#00450d] px-2.5 py-0.5 text-[10px] font-bold text-white">
+            {t('orderDetails.call')}
+          </span>
+        </a>
+      ))}
+    </div>
+  );
 
   // Raw API order (keeps productIds needed to repeat the order)
   const apiOrder: ApiOrder | undefined = React.useMemo(() => {
@@ -61,7 +93,7 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
 
     const formattedDate = (() => {
       try {
-        return new Date(found.createdAt).toLocaleDateString('en-IN', {
+        return new Date(found.createdAt).toLocaleDateString(currentLocale(), {
           day: 'numeric',
           month: 'short',
           year: 'numeric',
@@ -101,26 +133,28 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
       riderName: found.deliveryBoy?.name,
       riderPhone: found.deliveryBoy?.phone,
       deliveryAddress: {
-        label: 'Ghar Tak / Home',
-        flat: found.admin?.user?.fullname ? `Store: ${found.admin.user.fullname}` : 'Online Delivery',
-        landmark: 'Digital Kaata Verified',
+        label: t('orderDetails.home'),
+        flat: found.admin?.user?.fullname
+          ? t('orderDetails.store', { name: found.admin.user.fullname })
+          : t('orderDetails.online'),
+        landmark: t('orderDetails.scaleVerified'),
         pincode: '',
         city: '',
       },
     };
-  }, [localOrder, apiOrder]);
+  }, [localOrder, apiOrder, t]);
 
   if (!order) {
     return (
       <div className="bg-[#fcf9f8] min-h-screen px-4 pt-10 text-center">
-        <h2 className="text-lg font-bold text-[#1b1c1c]">Order Not Found</h2>
-        <p className="text-xs text-[#525e54] mt-1">Yeh order ID exist nahi karti.</p>
+        <h2 className="text-lg font-bold text-[#1b1c1c]">{t('orderDetails.notFound')}</h2>
+        <p className="text-xs text-[#525e54] mt-1">{t('orderDetails.notFoundDesc')}</p>
         <button
           type="button"
           onClick={onBack}
           className="mt-4 bg-[#00450d] text-white font-bold text-xs px-4 py-2 rounded-xl"
         >
-          Back to Orders
+          {t('orderDetails.backToOrders')}
         </button>
       </div>
     );
@@ -141,13 +175,13 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
   const getInstructionLabel = () => {
     switch (order.deliveryInstruction) {
       case 'ring_bell':
-        return { label: 'Ring Bell / Ghanti Bajayein', icon: <Bell size={14} className="text-amber-500" /> };
+        return { label: t('orderDetails.ringBell'), icon: <Bell size={14} className="text-amber-500" /> };
       case 'leave_door':
-        return { label: 'Leave at Door / Darwaze Par', icon: <DoorOpen size={14} className="text-amber-800" /> };
+        return { label: t('orderDetails.leaveDoor'), icon: <DoorOpen size={14} className="text-amber-800" /> };
       case 'do_not_ring':
-        return { label: 'Do Not Ring / Ghanti Mat Bajayein', icon: <VolumeX size={14} className="text-amber-600" /> };
+        return { label: t('orderDetails.doNotRing'), icon: <VolumeX size={14} className="text-amber-600" /> };
       default:
-        return { label: 'Standard Delivery', icon: <Bell size={14} /> };
+        return { label: t('orderDetails.standard'), icon: <Bell size={14} /> };
     }
   };
 
@@ -162,13 +196,13 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
             type="button"
             onClick={onBack}
             className="p-1 -ml-1 text-[#1b1c1c] hover:bg-black/5 rounded-full transition-colors cursor-pointer"
-            aria-label="Back"
+            aria-label={t('common.back')}
           >
             <ArrowLeft size={22} strokeWidth={2.2} />
           </button>
           <div>
             <h1 className="font-bold text-base sm:text-lg text-[#1b1c1c] tracking-tight">
-              Order Details
+              {t('orderDetails.title')}
             </h1>
             <p className="text-[11px] text-[#525e54]">
               {order.id} • {order.placedAt}
@@ -180,7 +214,7 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
           type="button"
           onClick={() => setShowHelpAlert(true)}
           className="p-1.5 text-[#525e54] hover:text-[#00450d] rounded-full hover:bg-black/5 transition-colors cursor-pointer"
-          title="Mandi Help"
+          title={t('orderDetails.help')}
         >
           <HelpCircle size={20} />
         </button>
@@ -192,10 +226,10 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <span className="text-[10px] uppercase font-black text-[#525e54] tracking-wider">
-                Current Status
+                {t('orderDetails.currentStatus')}
               </span>
               <h2 className="text-base font-extrabold text-[#1b1c1c] mt-0.5">
-                {isLive ? 'Rider On The Way (10-15 Mins)' : 'Order Successfully Delivered'}
+                {isLive ? t('orderDetails.riderOnWay') : t('orderDetails.delivered')}
               </h2>
             </div>
             {isLive ? (
@@ -216,7 +250,7 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
                 ✓
               </div>
               <div className="flex-1">
-                <p className="font-bold text-[#1b1c1c]">Order Placed &amp; Confirmed</p>
+                <p className="font-bold text-[#1b1c1c]">{t('orderDetails.stepPlaced')}</p>
                 <p className="text-[10px] text-[#717a6d]">{order.placedAt}</p>
               </div>
             </div>
@@ -226,8 +260,8 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
                 ✓
               </div>
               <div className="flex-1">
-                <p className="font-bold text-[#1b1c1c]">Digital Kaata Certified Weighing</p>
-                <p className="text-[10px] text-[#717a6d]">Dandi-free digital weigh verified</p>
+                <p className="font-bold text-[#1b1c1c]">{t('orderDetails.stepWeighing')}</p>
+                <p className="text-[10px] text-[#717a6d]">{t('orderDetails.stepWeighingDesc')}</p>
               </div>
             </div>
 
@@ -240,9 +274,9 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
                 {isLive ? '🛵' : '✓'}
               </div>
               <div className="flex-1">
-                <p className="font-bold text-[#1b1c1c]">Out for Delivery</p>
+                <p className="font-bold text-[#1b1c1c]">{t('orderDetails.stepOut')}</p>
                 <p className="text-[10px] text-[#717a6d]">
-                  Rider: {order.riderName || 'Santosh Kumar'} {order.riderPhone && `(${order.riderPhone})`}
+                  {t('orderDetails.rider', { name: order.riderName || 'Santosh Kumar' })} {order.riderPhone && `(${order.riderPhone})`}
                 </p>
               </div>
             </div>
@@ -257,10 +291,10 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
               </div>
               <div className="flex-1">
                 <p className={`font-bold ${isLive ? 'text-gray-400' : 'text-[#1b1c1c]'}`}>
-                  Ghar Par Delivery (Doorstep)
+                  {t('orderDetails.stepDoorstep')}
                 </p>
                 <p className="text-[10px] text-[#717a6d]">
-                  {isLive ? '10-15 minute window' : 'Delivered on time'}
+                  {isLive ? t('orderDetails.window') : t('orderDetails.onTime')}
                 </p>
               </div>
             </div>
@@ -271,10 +305,10 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-sm sm:text-base text-[#1b1c1c]">
-              Ordered Items ({order.items.length})
+              {t('orderDetails.orderedItems', { count: order.items.length })}
             </h3>
             <span className="text-[11px] font-semibold text-[#1b5e20] flex items-center gap-1">
-              <Scale size={12} /> Digital Kaata Verified
+              <Scale size={12} /> {t('orderDetails.scaleVerified')}
             </span>
           </div>
 
@@ -292,14 +326,14 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
                       {item.name}
                     </h4>
                     <p className="text-[11px] text-[#525e54]">
-                      {item.weight} • Qty: {item.quantity}
+                      {item.weight} • {t('orders.qty', { count: item.quantity })}
                     </p>
                   </div>
                 </div>
 
                 <div className="text-right shrink-0">
                   <span className="font-black text-sm text-[#00450d]">
-                    {item.price === 0 ? 'FREE' : `₹${item.price}`}
+                    {item.price === 0 ? t('common.free') : `₹${item.price}`}
                   </span>
                   {item.mrp > item.price && (
                     <span className="block text-[10px] text-[#9eaaa0] line-through">
@@ -331,10 +365,23 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
               <span className="font-medium">{instructionInfo.label}</span>
             </div>
             <span className="font-bold text-[#1b5e20] bg-[#e8f5e9] px-2 py-0.5 rounded">
-              Verified
+              {t('orderDetails.verified')}
             </span>
           </div>
         </div>
+
+        {/* Store contact numbers */}
+        {contactNumbers.length > 0 && (
+          <div className="bg-white rounded-2xl p-3.5 border border-[#e0e6e0] shadow-2xs space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Phone size={16} className="text-[#1b5e20]" />
+              <h3 className="font-extrabold text-sm text-[#1b1c1c]">
+                {t('orderDetails.contactUs')}
+              </h3>
+            </div>
+            {contactList}
+          </div>
+        )}
 
         {/* Saaf Hisaab / Complete Bill Breakdown */}
         <div className="bg-white rounded-2xl p-3.5 border border-[#e0e6e0] shadow-2xs space-y-2">
@@ -342,46 +389,46 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
             <div className="flex items-center gap-1.5">
               <Receipt size={16} className="text-[#1b5e20]" />
               <h3 className="font-extrabold text-sm text-[#1b1c1c]">
-                Saaf Hisaab / Bill Breakdown
+                {t('orderDetails.bill')}
               </h3>
             </div>
             <span className="text-[11px] font-bold text-[#525e54] uppercase">
-              Paid via {order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod.toUpperCase()}
+              {t('orderDetails.paidVia', { method: order.paymentMethod === 'cod' ? t('common.cod') : order.paymentMethod.toUpperCase() })}
             </span>
           </div>
 
           <div className="space-y-1.5 text-xs text-[#525e54]">
             <div className="flex justify-between">
-              <span>Items Total</span>
+              <span>{t('orderDetails.itemsTotal')}</span>
               <span className="font-bold text-[#1b1c1c]">₹{order.itemsTotal}</span>
             </div>
             <div className="flex justify-between text-[#1b5e20]">
               <span className="flex items-center gap-1">
-                <Leaf size={12} /> Mandi Fresh Discount
+                <Leaf size={12} /> {t('orderDetails.discount')}
               </span>
               <span className="font-bold">-₹{order.discountTotal}</span>
             </div>
             <div className="flex justify-between">
-              <span>Delivery Charge (Ghar Pahuchana)</span>
+              <span>{t('cart.deliveryCharge')}</span>
               <span className="font-bold text-[#1b5e20]">
-                {order.deliveryCharge === 0 ? 'FREE' : `₹${order.deliveryCharge}`}
+                {order.deliveryCharge === 0 ? t('common.free') : `₹${order.deliveryCharge}`}
               </span>
             </div>
             <div className="flex justify-between">
-              <span>Packing &amp; Digital Weighing</span>
-              <span className="font-bold text-[#1b5e20]">₹0 (Muft)</span>
+              <span>{t('orderDetails.packing')}</span>
+              <span className="font-bold text-[#1b5e20]">{t('orderDetails.packingFree')}</span>
             </div>
           </div>
 
           <div className="pt-2 border-t border-[#e0e6e0] flex items-center justify-between">
             <div>
               <span className="text-xs font-black text-[#1b1c1c] block">
-                Total Amount Paid
+                {t('orderDetails.totalPaid')}
               </span>
             
               {order.note && (
                 <span className="text-[13px] text-[#1b5e20] font-bold">
-                  Note: {order.note}
+                  {t('orders.note', { note: order.note })}
                 </span>
               )}
             </div>
@@ -400,7 +447,7 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
             className="w-full bg-[#00450d] hover:bg-[#1b5e20] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <RotateCw size={16} className={isRepeating ? 'animate-spin' : ''} />
-            <span>{isRepeating ? 'Adding to Cart...' : 'Repeat This Order'}</span>
+            <span>{isRepeating ? t('orderDetails.addingToCart') : t('orderDetails.repeat')}</span>
           </button>
 
           <button
@@ -409,7 +456,7 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
             className="w-full bg-white hover:bg-[#f9fbf9] text-[#1b1c1c] font-bold py-2.5 rounded-xl border border-[#e0e6e0] flex items-center justify-center gap-2 transition-colors cursor-pointer text-xs"
           >
             <FileText size={15} className="text-[#1b5e20]" />
-            <span>{downloadSuccess ? 'Bill Downloaded ✓' : 'Download Mandi Tax Invoice'}</span>
+            <span>{downloadSuccess ? t('orderDetails.billDownloaded') : t('orderDetails.downloadInvoice')}</span>
           </button>
         </div>
       </div>
@@ -427,19 +474,23 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
             <div className="w-12 h-12 rounded-full bg-[#e8f5e9] text-[#1b5e20] flex items-center justify-center mx-auto">
               <Phone size={22} />
             </div>
-            <h3 className="font-bold text-base text-[#1b1c1c]">Apna Mandi Support</h3>
+            <h3 className="font-bold text-base text-[#1b1c1c]">{t('orderDetails.support')}</h3>
             <p className="text-xs text-[#525e54]">
-              Order #{order.id} ke regarding koi bhi sawaal ho toh humare mandi helpline par turant call karein:
+              {t('orderDetails.supportDesc', { id: order.id })}
             </p>
-            <div className="bg-[#f0eded] rounded-xl p-2.5 font-bold text-xs text-[#00450d]">
-              Helpline: 1800-419-MANDI (Toll Free)
-            </div>
+            {contactNumbers.length > 0 ? (
+              contactList
+            ) : (
+              <div className="bg-[#f0eded] rounded-xl p-2.5 font-bold text-xs text-[#00450d]">
+                {t('orderDetails.helpline')}
+              </div>
+            )}
             <button
               type="button"
               onClick={() => setShowHelpAlert(false)}
               className="w-full bg-[#00450d] text-white font-bold py-2 rounded-xl text-xs"
             >
-              Theek Hai / Close
+              {t('common.close')}
             </button>
           </div>
         </div>

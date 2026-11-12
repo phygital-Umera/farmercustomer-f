@@ -10,19 +10,20 @@ import {
   useUpdateAddress,
 } from '@/lib/api and mutation/Order/useAdress';
 import { useAuthContext } from '@/context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 interface AddressModalProps {
   onClose: () => void;
 }
 
 const adressSchema = z.object({
-  address: z.string().min(2, 'Address is required'),
-  landmark: z.string().min(2, 'Landmark is required'),
-  pincode: z.string().min(4, 'Pincode is required'),
+  address: z.string().min(2, 'validation.addressRequired'),
+  landmark: z.string().min(2, 'validation.landmarkRequired'),
+  pincode: z.string().min(4, 'validation.pincodeRequired'),
   contactNo: z
     .string()
-    .min(10, 'Contact No. must be at least 10 digits')
-    .regex(/^[0-9+\-\s]+$/, 'Enter a valid contact number'),
+    .min(10, 'validation.contactMin')
+    .regex(/^[0-9+\-\s]+$/, 'validation.contactInvalid'),
 });
 
 export type FormType = z.infer<typeof adressSchema>;
@@ -43,6 +44,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose }) => {
   const { user } = useAuthContext();
 
   const { data: adressResponse, isLoading: isLoadingAddresses } = useGetAddress();
+  const { t } = useTranslation();
   const { mutate: createAddressMutation, isPending: isCreating } = useCreateAdresss();
   const { mutate: updateAddressMutation, isPending: isUpdating } = useUpdateAddress();
 
@@ -153,7 +155,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose }) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-[#00450d]">
             <MapPin size={20} />
-            <h3 className="font-extrabold text-base sm:text-lg">Delivery Location Badlo</h3>
+            <h3 className="font-extrabold text-base sm:text-lg">{t('address.title')}</h3>
           </div>
           <button
             type="button"
@@ -167,10 +169,10 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose }) => {
         {/* Address Tabs Section */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-[#525e54]">Aapke Addresses / Select:</p>
+            <p className="text-xs font-bold text-[#525e54]">{t('address.yourAddresses')}</p>
             {isLoadingAddresses && (
               <span className="text-[10px] text-[#1b5e20] flex items-center gap-1 font-semibold">
-                <Loader2 size={10} className="animate-spin" /> Loading...
+                <Loader2 size={10} className="animate-spin" /> {t('common.loading')}
               </span>
             )}
           </div>
@@ -190,7 +192,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose }) => {
                   }`}
                 >
                   <MapPin size={12} className={isSelected ? 'text-white' : 'text-[#1b5e20]'} />
-                  <span>Address {index + 1}</span>
+                  <span>{t('address.addressN', { n: index + 1 })}</span>
                   {isSelected && <Check size={12} strokeWidth={3} />}
                 </button>
               );
@@ -207,7 +209,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose }) => {
               }`}
             >
               <Plus size={14} />
-              <span>Add New</span>
+              <span>{t('address.addNew')}</span>
             </button>
           </div>
 
@@ -228,7 +230,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose }) => {
             {/* Address Field */}
             <div>
               <label htmlFor="address" className="block text-xs font-bold text-[#1b1c1c] mb-1">
-                Address / Flat / House No.
+                {t('address.addressLabel')}
               </label>
               <input
                 id="address"
@@ -239,11 +241,11 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose }) => {
                     ? 'border-red-500 bg-red-50/20'
                     : 'border-gray-200'
                 }`}
-                placeholder="e.g. Flat 402, Gokul Dham, MG Road"
+                placeholder={t('address.addressPlaceholder')}
               />
               {methods.formState.errors.address && (
                 <p className="text-[11px] text-red-600 mt-1 font-medium">
-                  {methods.formState.errors.address.message}
+                  {t(methods.formState.errors.address.message || '')}
                 </p>
               )}
             </div>
@@ -251,7 +253,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose }) => {
             {/* Landmark Field */}
             <div>
               <label htmlFor="landmark" className="block text-xs font-bold text-[#1b1c1c] mb-1">
-                Landmark
+                {t('address.landmark')}
               </label>
               <input
                 id="landmark"
@@ -262,11 +264,11 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose }) => {
                     ? 'border-red-500 bg-red-50/20'
                     : 'border-gray-200'
                 }`}
-                placeholder="e.g. Near Jain Temple, Opp. Metro Station"
+                placeholder={t('address.landmarkPlaceholder')}
               />
               {methods.formState.errors.landmark && (
                 <p className="text-[11px] text-red-600 mt-1 font-medium">
-                  {methods.formState.errors.landmark.message}
+                  {t(methods.formState.errors.landmark.message || '')}
                 </p>
               )}
             </div>
@@ -275,7 +277,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label htmlFor="pincode" className="block text-xs font-bold text-[#1b1c1c] mb-1">
-                  Pincode
+                  {t('address.pincode')}
                 </label>
                 <input
                   id="pincode"
@@ -287,18 +289,18 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose }) => {
                       ? 'border-red-500 bg-red-50/20'
                       : 'border-gray-200'
                   }`}
-                  placeholder="e.g. 400001"
+                  placeholder={t('address.pincodePlaceholder')}
                 />
                 {methods.formState.errors.pincode && (
                   <p className="text-[11px] text-red-600 mt-1 font-medium">
-                    {methods.formState.errors.pincode.message}
+                    {t(methods.formState.errors.pincode.message || '')}
                   </p>
                 )}
               </div>
 
               <div>
                 <label htmlFor="contactNo" className="block text-xs font-bold text-[#1b1c1c] mb-1">
-                  Contact No.
+                  {t('address.contactNo')}
                 </label>
                 <input
                   id="contactNo"
@@ -310,11 +312,11 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose }) => {
                       ? 'border-red-500 bg-red-50/20'
                       : 'border-gray-200'
                   }`}
-                  placeholder="e.g. 9876543210"
+                  placeholder={t('address.contactPlaceholder')}
                 />
                 {methods.formState.errors.contactNo && (
                   <p className="text-[11px] text-red-600 mt-1 font-medium">
-                    {methods.formState.errors.contactNo.message}
+                    {t(methods.formState.errors.contactNo.message || '')}
                   </p>
                 )}
               </div>
@@ -329,7 +331,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose }) => {
               >
                 {isSubmitting && <Loader2 size={16} className="animate-spin" />}
                 <span>
-                  {selectedAddressId ? 'Update Address' : 'Save & Create Address'}
+                  {selectedAddressId ? t('address.update') : t('address.save')}
                 </span>
               </button>
 
@@ -352,7 +354,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose }) => {
                   }}
                   className="w-full bg-[#e8f5e9] hover:bg-[#c8e6c9] text-[#00450d] font-bold py-2 rounded-xl text-xs transition-colors cursor-pointer"
                 >
-                  Use This Address Without Updating
+                  {t('address.useWithoutUpdate')}
                 </button>
               )}
             </div>
