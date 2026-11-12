@@ -30,7 +30,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
   onBack,
   onOpenCart,
 }) => {
-  const { addToCart, updateQuantity, getItemQuantity, updateProductWeight, addTadkaItem, items } = useCart();
+  const { addToCart, updateQuantity, getItemQuantity, addTadkaItem, items } = useCart();
   const cartItem = items.find((i) => i.product.id === product.id);
   const [selectedWeight, setSelectedWeight] = useState<string>(
     cartItem?.selectedWeight || product.defaultWeight || product.weightOptions[0]?.weight || '1 kg'
@@ -48,6 +48,13 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
   const currentCutPrice = activeWeightOption?.cutPrice ?? product.cutPrice;
   const savings = (currentCutPrice && currentCutPrice > currentPrice ? currentCutPrice : currentMrp) - currentPrice;
   const currentQty = getItemQuantity(product.id, selectedWeight);
+
+  // Amount = total of all this product's variants in the cart; single variant price otherwise
+  const productTotal = items
+    .filter((i) => i.product.id === product.id)
+    .reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+  const hasInCart = productTotal > 0;
+  const displayPrice = hasInCart ? productTotal : currentPrice;
 
   const handleShare = () => {
     if (navigator.share) {
@@ -274,7 +281,6 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
                   type="button"
                   onClick={() => {
                     setSelectedWeight(opt.weight);
-                    updateProductWeight(product.id, opt.weight, opt.price, opt.mrp);
                   }}
                   className={`p-2 shrink-0 min-w-[130px] h-15 rounded-xl border text-left transition-all relative cursor-pointer ${
                     isSelected
@@ -307,75 +313,6 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
                 </button>
               );
             })}
-          </div>
-        </div>
-
-        {/* Selected Weight Variant & Add To Cart Button */}
-        <div className="bg-white rounded-2xl p-3.5 border border-[#e0e6e0] shadow-2xs flex items-center justify-between gap-3">
-          <div>
-            <span className="text-[11px] text-[#525e54] font-medium block">
-              Selected: <strong className="text-[#1b1c1c]">{selectedWeight}</strong>
-            </span>
-            <div className="flex items-baseline gap-1.5 mt-0.5">
-              {currentCutPrice && currentCutPrice > 0 ? (
-                <span className="text-xs text-[#8a948c] line-through font-normal">
-                  ₹{currentCutPrice.toLocaleString('en-IN')}
-                </span>
-              ) : null}
-              <span className="text-lg font-black text-[#00450d]">
-                ₹{currentPrice.toLocaleString('en-IN')}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {currentQty > 0 ? (
-              <QuantityStepper
-                quantity={currentQty}
-                onIncrement={() => {
-                  const rawQty = activeWeightOption?.rawQty ?? (parseFloat(selectedWeight) || 1);
-                  const payload = {
-                    productId: product.id,
-                    price: currentPrice,
-                    productQuantity: rawQty,
-                    productCount: currentQty + 1,
-                  };
-                  console.log('🛒 Cart Item:', payload);
-                  updateQuantity(product.id, selectedWeight, 1);
-                }}
-                onDecrement={() => {
-                  const rawQty = activeWeightOption?.rawQty ?? (parseFloat(selectedWeight) || 1);
-                  const payload = {
-                    productId: product.id,
-                    price: currentPrice,
-                    productQuantity: rawQty,
-                    productCount: currentQty - 1,
-                  };
-                  console.log('🛒 Cart Item:', payload);
-                  updateQuantity(product.id, selectedWeight, -1);
-                }}
-                size="md"
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  const rawQty = activeWeightOption?.rawQty ?? (parseFloat(selectedWeight) || 1);
-                  const payload = {
-                    productId: product.id,
-                    price: currentPrice,
-                    productQuantity: rawQty,
-                    productCount: 1,
-                  };
-                  console.log('🛒 Cart Item:', payload);
-                  addToCart(product, selectedWeight, currentPrice, currentMrp);
-                }}
-                className="bg-[#00450d] hover:bg-[#1b5e20] text-white font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all active:scale-95 shadow-md cursor-pointer"
-              >
-                <ShoppingBag size={17} />
-                <span>ADD TO CART</span>
-              </button>
-            )}
           </div>
         </div>
 
@@ -465,7 +402,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
               Selected: {selectedWeight}
             </span>
             <div className="flex items-baseline gap-1.5">
-              {currentCutPrice && currentCutPrice > 0 ? (
+              {hasInCart ? null : currentCutPrice && currentCutPrice > 0 ? (
                 <span className="text-xs text-[#9eaaa0] line-through font-normal">
                   ₹{currentCutPrice.toLocaleString('en-IN')}
                 </span>
@@ -475,7 +412,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
                 </span>
               ) : null}
               <span className="text-xl font-black text-[#00450d]">
-                ₹{currentPrice.toLocaleString('en-IN')}
+                ₹{displayPrice.toLocaleString('en-IN')}
               </span>
             </div>
           </div>

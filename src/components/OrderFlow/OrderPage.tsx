@@ -13,9 +13,9 @@ import {
   LogIn,
 } from 'lucide-react';
 import { Link,  Navigate } from '@tanstack/react-router';
-import { useCart } from '@/context/CartContext';
 import { ApiOrder } from '@/types/OrderType';
 import { useGetOrder } from '@/lib/api and mutation/Order/useOrder';
+import { useRepeatOrder } from '@/lib/api and mutation/Order/useRepeatOrder';
 import { useAuthContext } from '@/context/AuthContext';
 
 interface OrdersPageProps {
@@ -29,7 +29,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
   onViewOrderDetails,
   onGoToShop,
 }) => {
-  const { repeatOrder } = useCart();
+  const { repeatOrder, isRepeating } = useRepeatOrder();
   const { data: orderData, isLoading, isError, error, refetch } = useGetOrder();
 
   const {isAuthenticated} = useAuthContext()
@@ -181,38 +181,6 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
           </span>
         );
     }
-  };
-
-  const handleRepeatOrder = (order: ApiOrder) => {
-    // Adapt ApiOrder to repeat order if necessary
-    const mappedOrder: any = {
-      id: order.id,
-      status: order.status.toLowerCase() === 'delivered' ? 'delivered' : 'live',
-      placedAt: formatOrderDate(order.createdAt),
-      note: order.note,
-      items: order.items.map((i) => ({
-        name: i.productName,
-        image: i.image || '',
-        weight: `${i.totalQuantity} kg`,
-        quantity: i.productCount,
-        price: i.price,
-        mrp: i.price,
-      })),
-      itemsTotal: order.subtotal,
-      discountTotal: 0,
-      deliveryCharge: 0,
-      totalPaid: order.grandTotal,
-      savingsTotal: 0,
-      paymentMethod: 'cod',
-      deliveryAddress: {
-        label: 'Home',
-        flat: '',
-        landmark: '',
-        pincode: '',
-        city: '',
-      },
-    };
-    repeatOrder(mappedOrder);
   };
 
   return (
@@ -398,11 +366,12 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
                 <div className="pt-2 border-t border-[#e0e6e0]/70 flex items-center justify-between gap-2">
                   <button
                     type="button"
-                    onClick={() => handleRepeatOrder(order)}
-                    className="flex items-center gap-1.5 text-xs font-bold text-[#1b5e20] hover:bg-[#e8f5e9] px-3 py-1.5 rounded-lg border border-[#2e7d32]/30 transition-colors cursor-pointer"
+                    disabled={isRepeating}
+                    onClick={() => repeatOrder(order)}
+                    className="flex items-center gap-1.5 text-xs font-bold text-[#1b5e20] hover:bg-[#e8f5e9] px-3 py-1.5 rounded-lg border border-[#2e7d32]/30 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <RotateCw size={13} />
-                    <span>Repeat Order</span>
+                    <RotateCw size={13} className={isRepeating ? 'animate-spin' : ''} />
+                    <span>{isRepeating ? 'Adding...' : 'Repeat Order'}</span>
                   </button>
 
                   <button

@@ -10,8 +10,10 @@ import { OffersModal } from './OffersModal';
 import { useGetAllProducts } from '@/lib/api and mutation/product/useProductApi';
 import { mapApiProductToProduct } from '@/utils/productMapper';
 import { ActiveTab, Order, Product } from '@/types/OrderType';
-import { Phone, Sparkles, X, ChevronRight, Package, MapPin, Tag } from 'lucide-react';
+import { Phone, Sparkles, X, ChevronRight, Package, MapPin, Tag, LogOut } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
+import { useAuthContext } from '@/context/AuthContext';
+import toast from 'react-hot-toast';
 
 const OrderFlowContent: React.FC = () => {
   const navigate = useNavigate();
@@ -22,6 +24,14 @@ const OrderFlowContent: React.FC = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   const { address, repeatOrder } = useCart();
+  const { isAuthenticated, logout } = useAuthContext();
+
+  const handleLogout = () => {
+    setShowProfileModal(false);
+    logout();
+    toast.success('Logged out');
+    navigate({ to: '/signin' });
+  };
 
   // Bottom Navigation tab selection
   const handleSelectTab = (tab: ActiveTab) => {
@@ -177,6 +187,17 @@ const OrderFlowContent: React.FC = () => {
                 <ChevronRight size={14} className="text-gray-400" />
               </button>
             </div>
+
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 border border-red-200 bg-white hover:bg-red-50 text-red-600 font-bold py-2.5 rounded-xl text-xs cursor-pointer transition-colors"
+              >
+                <LogOut size={15} />
+                Logout
+              </button>
+            )}
 
             <button
               type="button"

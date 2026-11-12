@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ShoppingBasket,
   Scale,
@@ -10,8 +10,6 @@ import {
   ArrowRight,
   Clock,
   CheckCircle2,
-  X,
-  MessageSquareHeart,
   Star,
   ThumbsUp,
   ThumbsDown,
@@ -21,11 +19,8 @@ import { Product } from '@/types/OrderType';
 import { useCart } from '@/context/CartContext';
 import { QuantityStepper } from './QuantityStepper';
 import { SearchBar } from './SearchBar';
-import { useGetAllProducts, useSubmitFeedback } from '@/lib/api and mutation/product/useProductApi';
+import { useGetAllProducts } from '@/lib/api and mutation/product/useProductApi';
 import { mapApiProductToProduct } from '@/utils/productMapper';
-import z from 'zod';
-import { FormProvider, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuthContext } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -34,110 +29,15 @@ interface HomePageProps {
   onOpenCart: () => void;
 }
 
-const feedbackschema = z.object({
-  quality: z.string().min(1, 'Please select Quality rating'),
-  service: z.string().min(1, 'Please select Service rating'),
-  staffRegard: z.string().min(1, 'Please select Staff Regard rating'),
-  note: z.string().optional().default(''),
-  GOOD: z.string().optional(),
-  POOR: z.string().optional(),
-  EXCELLENT: z.string().optional(),
-});
-
-type feedbacktype = z.infer<typeof feedbackschema>;
-
 export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart }) => {
-  const { addToCart, updateQuantity, getItemQuantity, updateProductWeight, items } = useCart();
+  const { addToCart, updateQuantity, getItemQuantity, items } = useCart();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedWeights, setSelectedWeights] = useState<Record<string, string>>({});
   const { data: productsData, isLoading: productsLoading } = useGetAllProducts();
 
-  const { isAuthenticated, user } = useAuthContext();
-  const [isFeedBackForm, setIsFeedBackForm] = useState<boolean>(false);
+  const { isAuthenticated } = useAuthContext();
 
-
-  const {mutate: submitFeedback} = useSubmitFeedback()
-
-  // Form handling
-  const method = useForm<feedbacktype>({
-    resolver: zodResolver(feedbackschema),
-    defaultValues: {
-      quality: '',
-      service: '',
-      staffRegard: '',
-      note: '',
-      GOOD: '',
-      POOR: '',
-      EXCELLENT: '',
-    },
-  });
-
-  const {
-    handleSubmit,
-    setValue,
-    watch,
-    register,
-    reset,
-    formState: { errors },
-  } = method;
-
-  const currentQuality = watch('quality');
-  const currentService = watch('service');
-  const currentStaffRegard = watch('staffRegard');
-
-  // Reset form to blank when opened so no option is pre-selected by default
-  useEffect(() => {
-    if (isFeedBackForm) {
-      reset({
-        quality: '',
-        service: '',
-        staffRegard: '',
-        note: '',
-      });
-    }
-  }, [isFeedBackForm, reset]);
-
-  // One-time feedback prompt when authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      const userId = user?.id || user?.userId || (user as any)?.user?.id || 'customer_user';
-      const alreadySubmitted = localStorage.getItem(`mandi_feedback_done_${userId}`);
-      const alreadyDismissed = sessionStorage.getItem(`mandi_feedback_dismissed_${userId}`);
-      if (!alreadySubmitted && !alreadyDismissed) {
-        const timer = setTimeout(() => {
-          setIsFeedBackForm(true);
-        }, 800);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [isAuthenticated, user]);
-
-  const onFeedBackSubmit = (data: feedbacktype) => {
-    console.log('📝 Feedback Submitted:', data);
-    submitFeedback(data)
-
-  
-    setIsFeedBackForm(false);
-    reset({
-      quality: '',
-      service: '',
-      staffRegard: '',
-      note: '',
-    });
-  };
-
-  const handleDismissFeedback = () => {
-
-    console
-    setIsFeedBackForm(false);
-    reset({
-      quality: '',
-      service: '',
-      staffRegard: '',
-      note: '',
-    });
-  };
 
   // Map API response to UI Product model, fallback to empty list if API list is empty
   const allProducts: Product[] = useMemo(() => {
@@ -191,15 +91,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
 
   const handleSelectWeight = (productId: string, weight: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    // Only switch the displayed variant; the cart changes on + ADD / + only
     setSelectedWeights((prev) => ({ ...prev, [productId]: weight }));
-
-    const product = allProducts.find((p) => p.id === productId);
-    if (product) {
-      const option = product.weightOptions.find((w) => w.weight === weight);
-      const price = option ? option.price : product.price;
-      const mrp = option ? option.mrp : product.mrp;
-      updateProductWeight(productId, weight, price, mrp);
-    }
   };
 
   return (
@@ -249,9 +142,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
       {/* Product Grid */}
       <div className="px-4 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {filteredProducts.map((product) => {
-          const cartItem = items.find((i) => i.product.id === product.id);
-          const currentWeight =
-            selectedWeights[product.id] || cartItem?.selectedWeight || product.defaultWeight;
+          const currentWeight = selectedWeights[product.id] || product.defaultWeight;
           const currentOption =
             product.weightOptions.find((w) => w.weight === currentWeight) ||
             product.weightOptions[0];
@@ -259,6 +150,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
           const activeMrp = currentOption ? currentOption.mrp : product.mrp;
           const activeCutPrice = currentOption?.cutPrice ?? product.cutPrice;
           const currentQty = getItemQuantity(product.id, currentWeight);
+          // Amount = total of all this product's variants in the cart; single variant price otherwise
+          const productLines = items.filter((i) => i.product.id === product.id);
+          const productTotal = productLines.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+          const productCutTotal = productLines.reduce((s, i) => {
+            const opt = product.weightOptions.find((w) => w.weight === i.selectedWeight);
+            return s + (opt?.cutPrice ?? 0) * i.quantity;
+          }, 0);
+          const hasInCart = productTotal > 0;
+          const displayPrice = hasInCart ? productTotal : activePrice;
+          const displayCut = hasInCart ? productCutTotal : activeCutPrice;
 
           return (
             <div
@@ -302,13 +203,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
                           key={w.weight}
                           type="button"
                           onClick={(e) => handleSelectWeight(product.id, w.weight, e)}
-                          className={`shrink-0 whitespace-nowrap text-[11px] px-2 py-0.5 rounded-full font-semibold border transition-all cursor-pointer ${
+                          className={`shrink-0 whitespace-nowrap text-[11px] px-2 py-0.5 rounded-lg font-semibold border transition-all cursor-pointer flex flex-col items-center leading-tight ${
                             isSelected
                               ? 'bg-[#e8f5e9] border-[#2e7d32] text-[#1b5e20] font-bold shadow-2xs'
                               : 'bg-white border-[#cfd8d0] text-[#525e54] hover:border-[#2e7d32]/60'
                           }`}
                         >
-                          {w.weight}
+                          <span>{w.weight}</span>
+                          <span className="text-[10px] font-medium opacity-80">
+                            ₹{w.price.toLocaleString('en-IN')}
+                          </span>
                         </button>
                       );
                     })}
@@ -319,13 +223,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
                 <div className="pt-1 flex items-center justify-between gap-1 mt-1">
                   <div>
                     <div className="flex items-baseline gap-1.5 flex-wrap">
-                      {activeCutPrice && activeCutPrice > 0 ? (
+                      {displayCut && displayCut > displayPrice ? (
                         <span className="text-xs sm:text-xs text-[#8a948c] line-through font-normal">
-                          ₹{activeCutPrice.toLocaleString('en-IN')}
+                          ₹{displayCut.toLocaleString('en-IN')}
                         </span>
                       ) : null}
                       <span className="font-extrabold text-sm sm:text-base text-[#1a1c1a]">
-                        ₹{activePrice.toLocaleString('en-IN')}
+                        ₹{displayPrice.toLocaleString('en-IN')}
                       </span>
                     </div>
                   </div>
@@ -419,147 +323,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onOpenCart 
           </div>
         </div>
 
-        {/* Manual Feedback trigger banner if user wants to give feedback anytime */}
-        <div className="bg-white rounded-2xl p-3 border border-[#e0e6e0] flex items-center justify-between shadow-2xs">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#00450d]/10 text-[#00450d] flex items-center justify-center">
-              <MessageSquareHeart size={16} />
-            </div>
-            <div className="text-xs">
-              <p className="font-bold text-[#1b1c1c]">Aapka Sujhav / Feedback</p>
-              <p className="text-[11px] text-[#525e54]">Quality, service aur staff rating share karein</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsFeedBackForm(true)}
-            className="bg-[#00450d] hover:bg-[#1b5e20] text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer shadow-xs"
-          >
-            Feedback
-          </button>
-        </div>
       </div>)}
-
-      {/* Feedback Modal (One-time when authenticated or on manual click) */}
- {isFeedBackForm &&  (
-  <div
-  
-    className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
-    onClick={handleDismissFeedback}
-  >
-  
-    <div
-      className="bg-white rounded-2xl max-w-sm w-full p-4 space-y-4 shadow-2xl overflow-y-auto animate-in zoom-in-95 duration-200"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {/* Modal Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center">
-            <MessageSquareHeart size={16} />
-          </div>
-          <div>
-            <h3 className="font-bold text-sm text-gray-900">Apna Mandi Feedback</h3>
-            <p className="text-[10px] text-gray-500">Aapka anubhav humare liye mahtvapoorna hai</p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={handleDismissFeedback}
-          className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
-        >
-          <X size={16} />
-        </button>
-      </div>
-
-      <FormProvider {...method}>
-        <form onSubmit={handleSubmit(onFeedBackSubmit)} className="space-y-3">
-          
-          {/* Rating Section Helper */}
-          {[
-            {
-              id: 'quality' as const,
-              title: '1. Sabzi Quality',
-              value: currentQuality,
-            },
-            {
-              id: 'service' as const,
-              title: '2. Delivery Service',
-              value: currentService,
-            },
-            {
-              id: 'staffRegard' as const,
-              title: '3. Staff Behavior',
-              value: currentStaffRegard,
-            },
-          ].map((field) => (
-            <div key={field.id} className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-gray-800">{field.title}</label>
-              </div>
-              <div className="flex gap-2">
-                {[
-                  { key: 'EXCELLENT', label: 'Excellent' },
-                  { key: 'GOOD', label: 'Good' },
-                  { key: 'POOR', label: 'Poor' },
-                ].map((opt) => {
-                  const isSelected = Boolean(field.value && field.value === opt.key);
-                  return (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      onClick={() => {
-                        setValue(field.id, isSelected ? '' : opt.key, { shouldValidate: true });
-                      }}
-                      className={`flex-1 py-1.5 px-1 rounded-lg border text-xs flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-emerald-50 border-emerald-600 text-emerald-800 font-bold shadow-sm ring-1 ring-emerald-600'
-                          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      <span>{opt.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              {errors[field.id] && (
-                <p className="text-[10px] text-red-500 font-medium">{errors[field.id]?.message}</p>
-              )}
-            </div>
-          ))}
-
-          {/* Suggestion / Note */}
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-800">4. Suggestion (Optional)</label>
-            <textarea
-              {...register('note')}
-              rows={2}
-              placeholder="Koi sujhav share karein..."
-              className="w-full text-xs p-2.5 rounded-lg border border-gray-200 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none resize-none placeholder:text-gray-400"
-            />
-          </div>
-
-          {/* Buttons */}
-          <div className="pt-2 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleDismissFeedback}
-              className="flex-1 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              Later
-            </button>
-            <button
-              type="submit"
-              className="flex-1 bg-emerald-800 hover:bg-emerald-900 text-white py-2 rounded-lg text-xs font-bold shadow-sm transition-transform active:scale-95"
-            >
-              Submit Feedback
-            </button>
-          </div>
-        </form>
-      </FormProvider>
-    </div>
-  </div>
-)}
     </div>
   );
 };

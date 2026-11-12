@@ -9,7 +9,8 @@ import QueryProvider from './lib/react-query/QueryProvider';
 import { routeTree } from './routeTree.gen';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { AuthContextType } from './types';
-import { useEffect } from 'react';
+import {useEffect, useState} from 'react';
+import SplashScreen from './components/SplashScreen';
 
 // Create a single router instance outside the component.
 // The context here is just a placeholder — the real auth values are injected
@@ -52,6 +53,9 @@ const RouterWithAuth = () => {
 };
 
 const App = () => {
+  // Splash plays once per page load; App never remounts on route navigation.
+  const [showSplash, setShowSplash] = useState(true);
+
   return (
     <AuthContextProvider>
       <WebSocketProvider>
@@ -61,6 +65,7 @@ const App = () => {
         <QueryProvider>
           <RouterWithAuth />
         </QueryProvider>
+        {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       </WebSocketProvider>
     </AuthContextProvider>
   );

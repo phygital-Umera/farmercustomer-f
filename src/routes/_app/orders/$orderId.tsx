@@ -2,8 +2,8 @@ import React from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { OrderDetailsPage } from '@/components/OrderFlow/OrderDetails';
 import { BottomNavigation } from '@/components/OrderFlow/BottomNavigation';
-import { CartProvider, useCart } from '@/context/CartContext';
-import { ActiveTab, Order } from '@/types/OrderType';
+import { CartProvider } from '@/context/CartContext';
+import { ActiveTab } from '@/types/OrderType';
 
 export const Route = createFileRoute('/_app/orders/$orderId')({
   component: OrderDetailRouteWrapper,
@@ -12,13 +12,6 @@ export const Route = createFileRoute('/_app/orders/$orderId')({
 function OrderDetailContent() {
   const navigate = useNavigate();
   const { orderId } = Route.useParams();
-  const { repeatOrder } = useCart();
-
-  const handleRepeatOrder = (order: Order) => {
-    repeatOrder(order);
-    navigate({ to: '/cart' });
-  };
-
   const handleSelectTab = (tab: ActiveTab) => {
     if (tab === 'orders') navigate({ to: '/orders' });
     else if (tab === 'home') navigate({ to: '/' });
@@ -32,7 +25,6 @@ function OrderDetailContent() {
         <OrderDetailsPage
           orderId={orderId}
           onBack={() => navigate({ to: '/orders' })}
-          onRepeatOrder={handleRepeatOrder}
         />
       </main>
 

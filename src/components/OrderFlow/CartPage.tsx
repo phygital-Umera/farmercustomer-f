@@ -4,7 +4,6 @@ import {
   Receipt,
   Banknote,
   QrCode,
-  CreditCard,
   ChevronUp,
   ChevronDown,
   ArrowRight,
@@ -122,6 +121,12 @@ export const CartPage: React.FC<CartPageProps> = ({
       { addressId: finalAddressId },
       {
         onSuccess: () => {
+          // Ask for feedback once, right after billing (read on the Orders page)
+          try {
+            sessionStorage.setItem('show_feedback_after_order', '1');
+          } catch {
+            /* storage unavailable — skip the prompt */
+          }
          navigate({to:'/orders'})
         },
       }
@@ -200,6 +205,9 @@ export const CartPage: React.FC<CartPageProps> = ({
     return activeDisplayItems.reduce((acc, i) => acc + i.price * i.count, 0);
   }, [activeDisplayItems]);
 
+  // Bill amounts are displayed with exactly 3 decimals
+  const fmt3 = (n: number) => n.toFixed(3);
+
   const displayDeliveryCharge = 0;
   const displayFinalToPay = displayItemsTotal;
 
@@ -257,12 +265,6 @@ export const CartPage: React.FC<CartPageProps> = ({
       title: 'UPI (Google Pay / PhonePe / Paytm)',
       description: 'Instant scan ya UPI ID se pay karein',
       icon: <QrCode size={20} className="text-[#1b5e20]" />,
-    },
-    {
-      id: 'card',
-      title: 'Debit / ATM / Credit Card',
-      description: 'Visa, RuPay, Mastercard sab chalenge',
-      icon: <CreditCard size={20} className="text-[#1b5e20]" />,
     },
   ];
 
@@ -464,7 +466,7 @@ export const CartPage: React.FC<CartPageProps> = ({
           <div className="space-y-1.5 text-xs text-[#525e54]">
             <div className="flex justify-between">
               <span>Total Items Price ({displayTotalCount} {displayTotalCount === 1 ? 'Chiz' : 'Chizein'})</span>
-              <span className="font-bold text-[#1b1c1c]">₹{displayItemsTotal}</span>
+              <span className="font-bold text-[#1b1c1c]">₹{fmt3(displayItemsTotal)}</span>
             </div>
 
             <div className="flex justify-between">
@@ -480,7 +482,7 @@ export const CartPage: React.FC<CartPageProps> = ({
               </span>
             </div>
             <span className="text-xl font-black text-[#00450d]">
-              ₹{displayFinalToPay}
+              ₹{fmt3(displayFinalToPay)}
             </span>
           </div>
         </div>
@@ -546,7 +548,7 @@ export const CartPage: React.FC<CartPageProps> = ({
           >
             <div className="flex items-baseline gap-1.5">
               <span className="text-xl font-black text-[#00450d]">
-                ₹{displayFinalToPay}
+                ₹{fmt3(displayFinalToPay)}
               </span>
             </div>
             <span className="text-[11px] font-bold text-[#1b5e20] flex items-center gap-0.5 group-hover:underline">
@@ -601,7 +603,7 @@ export const CartPage: React.FC<CartPageProps> = ({
             <div className="space-y-2 text-sm text-[#525e54]">
               <div className="flex justify-between">
                 <span>Items Subtotal</span>
-                <span className="font-bold text-[#1b1c1c]">₹{displayItemsTotal}</span>
+                <span className="font-bold text-[#1b1c1c]">₹{fmt3(displayItemsTotal)}</span>
               </div>
 
               <div className="flex justify-between">
@@ -611,7 +613,7 @@ export const CartPage: React.FC<CartPageProps> = ({
 
               <div className="pt-2 border-t border-gray-200 flex justify-between text-base font-black text-[#00450d]">
                 <span>Total Amount to Pay</span>
-                <span>₹{displayFinalToPay}</span>
+                <span>₹{fmt3(displayFinalToPay)}</span>
               </div>
             </div>
 

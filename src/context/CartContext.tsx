@@ -100,25 +100,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       weightOption?.rawQty ?? (parseFloat(weightToUse) || 1);
 
     setItems((prev) => {
-      const existingIndex = prev.findIndex((i) => i.product.id === product.id);
+      // Each weight variant is its own cart line, so several variants can coexist
+      const existingIndex = prev.findIndex(
+        (i) => i.product.id === product.id && i.selectedWeight === weightToUse
+      );
       if (existingIndex > -1) {
         const existing = prev[existingIndex];
         const updated = [...prev];
-        if (existing.selectedWeight === weightToUse) {
-          updated[existingIndex] = {
-            ...existing,
-            quantity: existing.quantity + 1,
-          };
-        } else {
-          // Different weight selected -> Replace existing weight variant in cart
-          updated[existingIndex] = {
-            ...existing,
-            selectedWeight: weightToUse,
-            unitPrice,
-            unitMrp,
-            quantity: existing.quantity > 0 ? existing.quantity : 1,
-          };
-        }
+        updated[existingIndex] = {
+          ...existing,
+          quantity: existing.quantity + 1,
+        };
         return updated;
       } else {
         return [

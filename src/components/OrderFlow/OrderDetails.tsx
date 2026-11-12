@@ -21,29 +21,24 @@ import { useCart } from '@/context/CartContext';
 import { Order, ApiOrder } from '@/types/OrderType';
 import { useGetOrder } from '@/lib/api and mutation/Order/useOrder';
 import { generateOrderInvoice } from '@/utils/generateInvoice';
+import { useRepeatOrder } from '@/lib/api and mutation/Order/useRepeatOrder';
 
 interface OrderDetailsPageProps {
   orderId: string;
   onBack: () => void;
-  onRepeatOrder: (order: Order) => void;
 }
 
 export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
   orderId,
   onBack,
-  onRepeatOrder,
 }) => {
   const { getOrderById } = useCart();
   const { data: apiOrderData } = useGetOrder();
-  const [downloadSuccess, setDownloadSuccess] = useState(false);
-  const [showHelpAlert, setShowHelpAlert] = useState(false);
+  const { repeatOrder, isRepeating } = useRepeatOrder();
 
-  const localOrder = getOrderById(orderId);
-
-  const order: Order | undefined = React.useMemo(() => {
-    if (localOrder) return localOrder;
+  // Raw API order (keeps productIds needed to repeat the order)
+  const apiOrder: ApiOrder | undefined = React.useMemo(() => {
     if (!apiOrderData) return undefined;
-
     const raw = apiOrderData as any;
     const list: ApiOrder[] = Array.isArray(raw?.data?.orders)
       ? raw.data.orders
@@ -52,8 +47,16 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
       : Array.isArray(raw?.data)
       ? raw.data
       : [];
+    return list.find((o) => o.id === orderId || o.orderNo === orderId);
+  }, [apiOrderData, orderId]);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [showHelpAlert, setShowHelpAlert] = useState(false);
 
-    const found = list.find((o) => o.id === orderId || o.orderNo === orderId);
+  const localOrder = getOrderById(orderId);
+
+  const order: Order | undefined = React.useMemo(() => {
+    if (localOrder) return localOrder;
+    const found = apiOrder;
     if (!found) return undefined;
 
     const formattedDate = (() => {
@@ -105,7 +108,7 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
         city: '',
       },
     };
-  }, [localOrder, apiOrderData, orderId]);
+  }, [localOrder, apiOrder]);
 
   if (!order) {
     return (
@@ -392,11 +395,12 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
         <div className="space-y-2 pt-1">
           <button
             type="button"
-            onClick={() => onRepeatOrder(order)}
-            className="w-full bg-[#00450d] hover:bg-[#1b5e20] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md cursor-pointer"
+            disabled={!apiOrder || isRepeating}
+            onClick={() => apiOrder && repeatOrder(apiOrder)}
+            className="w-full bg-[#00450d] hover:bg-[#1b5e20] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <RotateCw size={16} />
-            <span>Repeat This Order</span>
+            <RotateCw size={16} className={isRepeating ? 'animate-spin' : ''} />
+            <span>{isRepeating ? 'Adding to Cart...' : 'Repeat This Order'}</span>
           </button>
 
           <button
