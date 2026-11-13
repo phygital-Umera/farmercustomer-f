@@ -250,7 +250,8 @@
       "onTheWay": "मार्गावर",
       "delivered": "डिलिव्हर झाले",
       "cancelled": "रद्द",
-      "placed": "ऑर्डर झाला"
+      "placed": "ऑर्डर झाला",
+      "confirmed": "निश्चित"
     },
     "count_one": "{{count}} ऑर्डर",
     "count_other": "{{count}} ऑर्डर",
@@ -270,7 +271,11 @@
     "grandTotal": "एकूण रक्कम",
     "note": "टीप: {{note}}",
     "repeat": "पुन्हा ऑर्डर करा",
-    "viewMore": "अधिक पाहा"
+    "viewMore": "अधिक पाहा",
+    "preorderConfirmed": "प्री-ऑर्डर निश्चित झाला",
+    "confirmedOn": "{{date}} रोजी",
+    "scheduledDelivery": "डिलिव्हरी: {{when}}",
+    "storeNote": "स्टोअरची टीप: {{note}}"
   },
   "preorder": {
     "deliveryOn": "डिलिव्हरी: {{when}}",
