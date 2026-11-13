@@ -52,7 +52,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
   const savings = (currentCutPrice && currentCutPrice > currentPrice ? currentCutPrice : currentMrp) - currentPrice;
   const currentQty = getItemQuantity(product.id, selectedWeight);
 
-  // Amount = total of all this product's variants in the cart; single variant price otherwise
+  // Amount = total of all this product's variants in the cart; single variant price
   const productTotal = items
     .filter((i) => i.product.id === product.id)
     .reduce((s, i) => s + i.unitPrice * i.quantity, 0);
@@ -83,7 +83,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
 
   return (
     <div className="bg-[#fcf9f8] min-h-screen pb-48">
-      {/* Top Header Bar matching Screenshot 3 */}
+     
       <div className="sticky top-0 z-40 bg-[#fcf9f8]/95 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-black/[0.04]">
         <div className="flex items-center gap-2">
           <button
@@ -135,9 +135,9 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
         {/* Origin Pill */}
   
 
-        {/* Hero Image with Badges */}
+       
         <div className="relative rounded-2xl overflow-hidden bg-white border border-black/[0.06] shadow-sm">
-          {/* Top Freshness Badge */}
+         
           <div className="absolute top-3 left-3 z-10">
             <span className="bg-[#00450d] text-white text-[10px] sm:text-[11px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
               {t('product.freshBadge')}
@@ -154,7 +154,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
             <div className="w-full aspect-[4/3] bg-[#f4f6f4]" />
           )}
 
-          {/* Bottom Right Digital Wazan Badge */}
+         
           <div className="absolute bottom-3 right-3 z-10">
             <span className="inline-flex items-center gap-1 bg-white/95 backdrop-blur-xs text-[#00450d] text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm border border-black/5">
               <Scale size={12} className="text-[#1b5e20]" />
@@ -171,7 +171,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
           </div>
         </div>
 
-        {/* Product Title and Discount */}
+       
         <div>
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-xl sm:text-2xl font-black text-[#1b1c1c] tracking-tight">
@@ -196,7 +196,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
               </span>
             </div>
 
-            {/* Quick Add Button or Quantity Stepper by the Price */}
+           
             <div>
               {currentQty > 0 ? (
                 <QuantityStepper
@@ -249,7 +249,6 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
           </div>
         </div>
 
-        {/* 10-15 Min Delivery speed card */}
         <div className="bg-[#f0eded] rounded-xl p-3 flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-[#1b5e20] text-white flex items-center justify-center shrink-0">
             <Zap size={16} fill="white" />
@@ -264,7 +263,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
           </div>
         </div>
 
-        {/* Weight Selector */}
+       
         <div>
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-bold text-sm sm:text-base text-[#1b1c1c]">
@@ -327,17 +326,14 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
           </div>
         </div>
 
-        {/* Mandi Bhav Muqabla (Price Match) Card */}
-    
-
-        {/* Ghar Ki Rasoi Ke Liye Vishwas (Our Guarantee) */}
+       
         <div className="space-y-2 pt-1">
           <h3 className="font-bold text-sm sm:text-base text-[#1b1c1c]">
             {t('product.guaranteeTitle')}
           </h3>
 
           <div className="bg-white rounded-2xl p-3.5 border border-[#e0e6e0] space-y-3 shadow-2xs">
-            {/* Point 1 */}
+         
             <div className="flex items-start gap-2.5">
               <div className="w-6 h-6 rounded-full bg-[#a0f399] text-[#00450d] flex items-center justify-center shrink-0 mt-0.5">
                 <Check size={14} strokeWidth={3} />
@@ -352,7 +348,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
               </div>
             </div>
 
-            {/* Point 2 */}
+        
             <div className="flex items-start gap-2.5">
               <div className="w-6 h-6 rounded-full bg-[#a0f399] text-[#00450d] flex items-center justify-center shrink-0 mt-0.5">
                 <Smile size={14} strokeWidth={2.5} />
@@ -367,7 +363,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
               </div>
             </div>
 
-            {/* Point 3 */}
+           
             <div className="flex items-start gap-2.5">
               <div className="w-6 h-6 rounded-full bg-[#a0f399] text-[#00450d] flex items-center justify-center shrink-0 mt-0.5">
                 <RefreshCw size={14} strokeWidth={2.5} />
@@ -382,7 +378,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
               </div>
             </div>
 
-            {/* Point 4 */}
+           
             <div className="flex items-start gap-2.5">
               <div className="w-6 h-6 rounded-full bg-[#a0f399] text-[#00450d] flex items-center justify-center shrink-0 mt-0.5">
                 <Scale size={14} strokeWidth={2.5} />
@@ -399,13 +395,11 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({
           </div>
         </div>
 
-        {/* Rasoi Tips & Uses */}
-     
-        {/* Tadka Saath Mein Liya? (Quick Add) */}
+    
       
       </div>
 
-      {/* Sticky Bottom Bar positioned right above BottomNavigation */}
+     
       <div className="fixed bottom-14 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-black/[0.08] p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
         <div className="max-w-md mx-auto flex items-center justify-between gap-3">
           <div>

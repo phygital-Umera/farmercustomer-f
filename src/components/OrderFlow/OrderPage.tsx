@@ -18,6 +18,11 @@ import { useGetOrder } from '@/lib/api and mutation/Order/useOrder';
 import { useRepeatOrder } from '@/lib/api and mutation/Order/useRepeatOrder';
 import { useAuthContext } from '@/context/AuthContext';
 import { PreorderHistoryCard } from './PreorderHistoryCard';
+import {
+  PreorderChip,
+  PreorderConfirmationInfo,
+  isConfirmedPreorder,
+} from './PreorderConfirmationInfo';
 import { useTranslation } from 'react-i18next';
 import { currentLocale } from '@/i18n';
 
@@ -149,6 +154,13 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
           <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
             <Clock size={12} className="text-amber-600" />
             <span>{t('orders.status.pending')}</span>
+          </span>
+        );
+      case 'CONFIRMED':
+        return (
+          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+            <CheckCircle2 size={12} className="text-emerald-600" />
+            <span>{t('orders.status.confirmed')}</span>
           </span>
         );
       case 'PACKED':
@@ -307,6 +319,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
         {!isLoading &&
           !isError &&
           normalOrders.map((order) => {
+            const confirmedPreorder = isConfirmedPreorder(order);
             const shortOrderNo = order.orderNo
               ? order.orderNo.slice(0, 8).toUpperCase()
               : order.id.slice(0, 8).toUpperCase();
@@ -320,6 +333,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
                 <div className="flex items-center justify-between pb-2 border-b border-[#e0e6e0]/70">
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
+                      {confirmedPreorder && <PreorderChip />}
                       <span className="font-black text-xs text-[#00450d]">
                         #{shortOrderNo}
                       </span>
@@ -343,6 +357,8 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
                     </span>
                   </div>
                 )} */}
+
+                {confirmedPreorder && <PreorderConfirmationInfo order={order} />}
 
                 {/* Items Summary */}
                 <div className="bg-[#f9fbf9] rounded-xl p-2.5 border border-[#e0e6e0]/60 space-y-2">

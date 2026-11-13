@@ -250,7 +250,8 @@
       "onTheWay": "On The Way",
       "delivered": "Delivered",
       "cancelled": "Cancelled",
-      "placed": "Order Placed"
+      "placed": "Order Placed",
+      "confirmed": "Confirmed"
     },
     "count_one": "{{count}} Order",
     "count_other": "{{count}} Orders",
@@ -270,7 +271,11 @@
     "grandTotal": "Grand Total",
     "note": "Note: {{note}}",
     "repeat": "Repeat Order",
-    "viewMore": "View More"
+    "viewMore": "View More",
+    "preorderConfirmed": "Pre-order confirmed",
+    "confirmedOn": "on {{date}}",
+    "scheduledDelivery": "Delivery: {{when}}",
+    "storeNote": "Store note: {{note}}"
   },
   "preorder": {
     "deliveryOn": "Delivery: {{when}}",

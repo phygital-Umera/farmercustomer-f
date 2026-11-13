@@ -1,30 +1,20 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  ArrowLeft,
-  CheckCircle2,
-  Clock,
-  MapPin,
-  Phone,
-  RotateCw,
-  Scale,
-  ShieldCheck,
-  Zap,
-  Leaf,
-  Receipt,
-  FileText,
-  HelpCircle,
-  Bell,
-  DoorOpen,
-  VolumeX,
-} from 'lucide-react';
-import { useCart } from '@/context/CartContext';
-import { Order, ApiOrder } from '@/types/OrderType';
-import { useGetOrder } from '@/lib/api and mutation/Order/useOrder';
-import { generateOrderInvoice } from '@/utils/generateInvoice';
-import { useRepeatOrder } from '@/lib/api and mutation/Order/useRepeatOrder';
-import { useGetContactNumbers } from '@/lib/api and mutation/settings/useSettings';
-import { useTranslation } from 'react-i18next';
-import { currentLocale } from '@/i18n';
+  PreorderConfirmationInfo,
+  isConfirmedPreorder,
+} from './PreorderConfirmationInfo';
+import {
+  OrderNotFound,
+  OrderDetailsHeader,
+  OrderStatusTracker,
+  OrderItemsList,
+  OrderDeliveryInfo,
+  OrderContactCard,
+  OrderBillBreakdown,
+  OrderActionButtons,
+  OrderHelpModal,
+  useOrderDetailsData,
+} from './order-details';
 
 interface OrderDetailsPageProps {
   orderId: string;
@@ -35,466 +25,72 @@ export const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({
   orderId,
   onBack,
 }) => {
-  const { getOrderById } = useCart();
-  const { t } = useTranslation();
-  const { data: apiOrderData } = useGetOrder();
-  const { repeatOrder, isRepeating } = useRepeatOrder();
-  const { data: contactNumbers = [] } = useGetContactNumbers();
-
-  const contactList = (
-    <div className="space-y-1.5">
-      {contactNumbers.map((c, i) => (
-        <a
-          key={`${c.number}-${i}`}
-          href={`tel:${c.number.replace(/[^\d+]/g, '')}`}
-          className="flex items-center justify-between gap-2 rounded-xl bg-[#f0eded] px-3 py-2 text-xs"
-        >
-          <span className="flex min-w-0 items-center gap-2">
-            <Phone size={14} className="shrink-0 text-[#1b5e20]" />
-            <span className="min-w-0 text-left">
-              {c.label && (
-                <span className="block text-[10px] font-semibold uppercase text-[#525e54]">
-                  {c.label}
-                </span>
-              )}
-              <span className="block truncate font-bold text-[#00450d]">{c.number}</span>
-            </span>
-          </span>
-          <span className="shrink-0 rounded-full bg-[#00450d] px-2.5 py-0.5 text-[10px] font-bold text-white">
-            {t('orderDetails.call')}
-          </span>
-        </a>
-      ))}
-    </div>
-  );
-
-  // Raw API order (keeps productIds needed to repeat the order)
-  const apiOrder: ApiOrder | undefined = React.useMemo(() => {
-    if (!apiOrderData) return undefined;
-    const raw = apiOrderData as any;
-    const list: ApiOrder[] = Array.isArray(raw?.data?.orders)
-      ? raw.data.orders
-      : Array.isArray(raw?.orders)
-      ? raw.orders
-      : Array.isArray(raw?.data)
-      ? raw.data
-      : [];
-    return list.find((o) => o.id === orderId || o.orderNo === orderId);
-  }, [apiOrderData, orderId]);
-  const [downloadSuccess, setDownloadSuccess] = useState(false);
-  const [showHelpAlert, setShowHelpAlert] = useState(false);
-
-  const localOrder = getOrderById(orderId);
-
-  const order: Order | undefined = React.useMemo(() => {
-    if (localOrder) return localOrder;
-    const found = apiOrder;
-    if (!found) return undefined;
-
-    const formattedDate = (() => {
-      try {
-        return new Date(found.createdAt).toLocaleDateString(currentLocale(), {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true,
-        });
-      } catch {
-        return found.createdAt;
-      }
-    })();
-
-    const isDelivered =
-      found.status?.toUpperCase() === 'DELIVERED' ||
-      found.status?.toUpperCase() === 'COMPLETED';
-
-    return {
-      id: `#${(found.orderNo || found.id).slice(0, 8).toUpperCase()}`,
-      status: isDelivered ? 'delivered' : 'live',
-      placedAt: formattedDate,
-      note:found.note,
-      items: found.items.map((i) => ({
-        name: i.productName.charAt(0).toUpperCase() + i.productName.slice(1),
-        image: i.image || '',
-        weight: i.totalQuantity ? `${i.totalQuantity} kg` : `${i.productQuantity} kg`,
-        quantity: i.productCount || 1,
-        price: Number(i.totalPrice ?? i.subtotal),
-        mrp: Number(i.totalPrice ?? i.subtotal),
-      })),
-      itemsTotal: Number(found.subtotal),
-      discountTotal: 0,
-      deliveryCharge: 0,
-      totalPaid: Number(found.grandTotal),
-      savingsTotal: 0,
-      paymentMethod: 'cod',
-      deliveryInstruction: 'ring_bell',
-      riderName: found.deliveryBoy?.name,
-      riderPhone: found.deliveryBoy?.phone,
-      deliveryAddress: {
-        label: t('orderDetails.home'),
-        flat: found.admin?.user?.fullname
-          ? t('orderDetails.store', { name: found.admin.user.fullname })
-          : t('orderDetails.online'),
-        landmark: t('orderDetails.scaleVerified'),
-        pincode: '',
-        city: '',
-      },
-    };
-  }, [localOrder, apiOrder, t]);
+  const {
+    order,
+    apiOrder,
+    isLive,
+    contactNumbers,
+    downloadSuccess,
+    showHelpAlert,
+    setShowHelpAlert,
+    isRepeating,
+    handleDownloadInvoice,
+    handleRepeatOrder,
+    instructionInfo,
+  } = useOrderDetailsData(orderId);
 
   if (!order) {
-    return (
-      <div className="bg-[#fcf9f8] min-h-screen px-4 pt-10 text-center">
-        <h2 className="text-lg font-bold text-[#1b1c1c]">{t('orderDetails.notFound')}</h2>
-        <p className="text-xs text-[#525e54] mt-1">{t('orderDetails.notFoundDesc')}</p>
-        <button
-          type="button"
-          onClick={onBack}
-          className="mt-4 bg-[#00450d] text-white font-bold text-xs px-4 py-2 rounded-xl"
-        >
-          {t('orderDetails.backToOrders')}
-        </button>
-      </div>
-    );
+    return <OrderNotFound onBack={onBack} />;
   }
-
-  const isLive = order.status !== 'delivered';
-
-  const handleDownloadInvoice = () => {
-    try {
-      generateOrderInvoice(order);
-      setDownloadSuccess(true);
-      setTimeout(() => setDownloadSuccess(false), 2500);
-    } catch (err) {
-      console.error('Failed to generate invoice:', err);
-    }
-  };
-
-  const getInstructionLabel = () => {
-    switch (order.deliveryInstruction) {
-      case 'ring_bell':
-        return { label: t('orderDetails.ringBell'), icon: <Bell size={14} className="text-amber-500" /> };
-      case 'leave_door':
-        return { label: t('orderDetails.leaveDoor'), icon: <DoorOpen size={14} className="text-amber-800" /> };
-      case 'do_not_ring':
-        return { label: t('orderDetails.doNotRing'), icon: <VolumeX size={14} className="text-amber-600" /> };
-      default:
-        return { label: t('orderDetails.standard'), icon: <Bell size={14} /> };
-    }
-  };
-
-  const instructionInfo = getInstructionLabel();
 
   return (
     <div className="bg-[#fcf9f8] min-h-screen pb-28">
       {/* Top Header */}
-      <div className="sticky top-0 z-40 bg-[#fcf9f8]/95 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-black/[0.04]">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onBack}
-            className="p-1 -ml-1 text-[#1b1c1c] hover:bg-black/5 rounded-full transition-colors cursor-pointer"
-            aria-label={t('common.back')}
-          >
-            <ArrowLeft size={22} strokeWidth={2.2} />
-          </button>
-          <div>
-            <h1 className="font-bold text-base sm:text-lg text-[#1b1c1c] tracking-tight">
-              {t('orderDetails.title')}
-            </h1>
-            <p className="text-[11px] text-[#525e54]">
-              {order.id} • {order.placedAt}
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setShowHelpAlert(true)}
-          className="p-1.5 text-[#525e54] hover:text-[#00450d] rounded-full hover:bg-black/5 transition-colors cursor-pointer"
-          title={t('orderDetails.help')}
-        >
-          <HelpCircle size={20} />
-        </button>
-      </div>
+      <OrderDetailsHeader
+        orderId={order.id}
+        placedAt={order.placedAt}
+        onBack={onBack}
+        onOpenHelp={() => setShowHelpAlert(true)}
+      />
 
       <div className="max-w-md mx-auto px-4 pt-3 space-y-4">
-        {/* Status Tracker Banner */}
-        <div className="bg-white rounded-2xl p-4 border border-[#e0e6e0] shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-[10px] uppercase font-black text-[#525e54] tracking-wider">
-                {t('orderDetails.currentStatus')}
-              </span>
-              <h2 className="text-base font-extrabold text-[#1b1c1c] mt-0.5">
-                {isLive ? t('orderDetails.riderOnWay') : t('orderDetails.delivered')}
-              </h2>
-            </div>
-            {isLive ? (
-              <span className="w-8 h-8 rounded-full bg-[#a0f399] text-[#00450d] flex items-center justify-center animate-pulse">
-                <Zap size={18} fill="#00450d" />
-              </span>
-            ) : (
-              <span className="w-8 h-8 rounded-full bg-[#e8f5e9] text-[#1b5e20] flex items-center justify-center">
-                <CheckCircle2 size={20} />
-              </span>
-            )}
-          </div>
-
-          {/* Stepper Timeline */}
-          <div className="pt-2 border-t border-[#e0e6e0]/60 space-y-2.5">
-            <div className="flex items-center gap-3 text-xs">
-              <div className="w-5 h-5 rounded-full bg-[#00450d] text-white flex items-center justify-center text-[10px] font-bold">
-                ✓
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-[#1b1c1c]">{t('orderDetails.stepPlaced')}</p>
-                <p className="text-[10px] text-[#717a6d]">{order.placedAt}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 text-xs">
-              <div className="w-5 h-5 rounded-full bg-[#00450d] text-white flex items-center justify-center text-[10px] font-bold">
-                ✓
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-[#1b1c1c]">{t('orderDetails.stepWeighing')}</p>
-                <p className="text-[10px] text-[#717a6d]">{t('orderDetails.stepWeighingDesc')}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 text-xs">
-              <div
-                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                  isLive ? 'bg-[#a0f399] text-[#00450d] animate-bounce' : 'bg-[#00450d] text-white'
-                }`}
-              >
-                {isLive ? '🛵' : '✓'}
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-[#1b1c1c]">{t('orderDetails.stepOut')}</p>
-                <p className="text-[10px] text-[#717a6d]">
-                  {t('orderDetails.rider', { name: order.riderName || 'Santosh Kumar' })} {order.riderPhone && `(${order.riderPhone})`}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 text-xs">
-              <div
-                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                  isLive ? 'bg-gray-200 text-gray-500' : 'bg-[#00450d] text-white'
-                }`}
-              >
-                {isLive ? '4' : '✓'}
-              </div>
-              <div className="flex-1">
-                <p className={`font-bold ${isLive ? 'text-gray-400' : 'text-[#1b1c1c]'}`}>
-                  {t('orderDetails.stepDoorstep')}
-                </p>
-                <p className="text-[10px] text-[#717a6d]">
-                  {isLive ? t('orderDetails.window') : t('orderDetails.onTime')}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* All Items in This Order */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-sm sm:text-base text-[#1b1c1c]">
-              {t('orderDetails.orderedItems', { count: order.items.length })}
-            </h3>
-            <span className="text-[11px] font-semibold text-[#1b5e20] flex items-center gap-1">
-              <Scale size={12} /> {t('orderDetails.scaleVerified')}
-            </span>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-[#e0e6e0] divide-y divide-[#e0e6e0] overflow-hidden shadow-2xs">
-            {order.items.map((item, idx) => (
-              <div key={idx} className="p-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-12 h-12 rounded-xl object-cover bg-gray-50 border border-black/5 shrink-0"
-                  />
-                  <div>
-                    <h4 className="font-bold text-xs sm:text-sm text-[#1b1c1c] leading-snug line-clamp-1">
-                      {item.name}
-                    </h4>
-                    <p className="text-[11px] text-[#525e54]">
-                      {item.weight} • {t('orders.qty', { count: item.quantity })}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <span className="font-black text-sm text-[#00450d]">
-                    {item.price === 0 ? t('common.free') : `₹${item.price}`}
-                  </span>
-                  {item.mrp > item.price && (
-                    <span className="block text-[10px] text-[#9eaaa0] line-through">
-                      ₹{item.mrp}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Delivery Address & Instructions */}
-        <div className="bg-white rounded-2xl p-3.5 border border-[#e0e6e0] shadow-2xs space-y-3">
-          <div className="flex items-start gap-2.5">
-            <MapPin size={18} className="text-[#1b5e20] shrink-0 mt-0.5" />
-            <div className="text-xs">
-              <p className="font-bold text-[#1b1c1c]">{order.deliveryAddress.label}</p>
-              <p className="text-[#1b1c1c] font-semibold mt-0.5">{order.deliveryAddress.flat}</p>
-              <p className="text-[#525e54] text-[11px]">
-                {order.deliveryAddress.landmark}, {order.deliveryAddress.city} {order.deliveryAddress.pincode}
-              </p>
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-[#e0e6e0]/70 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-1.5 text-[#525e54]">
-              {instructionInfo.icon}
-              <span className="font-medium">{instructionInfo.label}</span>
-            </div>
-            <span className="font-bold text-[#1b5e20] bg-[#e8f5e9] px-2 py-0.5 rounded">
-              {t('orderDetails.verified')}
-            </span>
-          </div>
-        </div>
-
-        {/* Store contact numbers */}
-        {contactNumbers.length > 0 && (
-          <div className="bg-white rounded-2xl p-3.5 border border-[#e0e6e0] shadow-2xs space-y-2">
-            <div className="flex items-center gap-1.5">
-              <Phone size={16} className="text-[#1b5e20]" />
-              <h3 className="font-extrabold text-sm text-[#1b1c1c]">
-                {t('orderDetails.contactUs')}
-              </h3>
-            </div>
-            {contactList}
-          </div>
+        {/* Confirmed pre-order details */}
+        {apiOrder && isConfirmedPreorder(apiOrder) && (
+          <PreorderConfirmationInfo order={apiOrder} />
         )}
 
-        {/* Saaf Hisaab / Complete Bill Breakdown */}
-        <div className="bg-white rounded-2xl p-3.5 border border-[#e0e6e0] shadow-2xs space-y-2">
-          <div className="flex items-center justify-between pb-2 border-b border-[#e0e6e0]">
-            <div className="flex items-center gap-1.5">
-              <Receipt size={16} className="text-[#1b5e20]" />
-              <h3 className="font-extrabold text-sm text-[#1b1c1c]">
-                {t('orderDetails.bill')}
-              </h3>
-            </div>
-            <span className="text-[11px] font-bold text-[#525e54] uppercase">
-              {t('orderDetails.paidVia', { method: order.paymentMethod === 'cod' ? t('common.cod') : order.paymentMethod.toUpperCase() })}
-            </span>
-          </div>
+        {/* Status Tracker Banner */}
+        <OrderStatusTracker order={order} isLive={isLive} />
 
-          <div className="space-y-1.5 text-xs text-[#525e54]">
-            <div className="flex justify-between">
-              <span>{t('orderDetails.itemsTotal')}</span>
-              <span className="font-bold text-[#1b1c1c]">₹{order.itemsTotal}</span>
-            </div>
-            <div className="flex justify-between text-[#1b5e20]">
-              <span className="flex items-center gap-1">
-                <Leaf size={12} /> {t('orderDetails.discount')}
-              </span>
-              <span className="font-bold">-₹{order.discountTotal}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>{t('cart.deliveryCharge')}</span>
-              <span className="font-bold text-[#1b5e20]">
-                {order.deliveryCharge === 0 ? t('common.free') : `₹${order.deliveryCharge}`}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>{t('orderDetails.packing')}</span>
-              <span className="font-bold text-[#1b5e20]">{t('orderDetails.packingFree')}</span>
-            </div>
-          </div>
+        {/* All Items in This Order */}
+        <OrderItemsList items={order.items} />
 
-          <div className="pt-2 border-t border-[#e0e6e0] flex items-center justify-between">
-            <div>
-              <span className="text-xs font-black text-[#1b1c1c] block">
-                {t('orderDetails.totalPaid')}
-              </span>
-            
-              {order.note && (
-                <span className="text-[13px] text-[#1b5e20] font-bold">
-                  {t('orders.note', { note: order.note })}
-                </span>
-              )}
-            </div>
-            <span className="text-xl font-black text-[#00450d]">
-              ₹{order.totalPaid}
-            </span>
-          </div>
-        </div>
+        {/* Delivery Address & Instructions */}
+        <OrderDeliveryInfo order={order} instructionInfo={instructionInfo} />
+
+        {/* Store contact numbers */}
+        <OrderContactCard contactNumbers={contactNumbers} />
+
+        {/* Bill Breakdown */}
+        <OrderBillBreakdown order={order} />
 
         {/* Action Buttons: Repeat Order & Download Invoice */}
-        <div className="space-y-2 pt-1">
-          <button
-            type="button"
-            disabled={!apiOrder || isRepeating}
-            onClick={() => apiOrder && repeatOrder(apiOrder)}
-            className="w-full bg-[#00450d] hover:bg-[#1b5e20] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <RotateCw size={16} className={isRepeating ? 'animate-spin' : ''} />
-            <span>{isRepeating ? t('orderDetails.addingToCart') : t('orderDetails.repeat')}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleDownloadInvoice}
-            className="w-full bg-white hover:bg-[#f9fbf9] text-[#1b1c1c] font-bold py-2.5 rounded-xl border border-[#e0e6e0] flex items-center justify-center gap-2 transition-colors cursor-pointer text-xs"
-          >
-            <FileText size={15} className="text-[#1b5e20]" />
-            <span>{downloadSuccess ? t('orderDetails.billDownloaded') : t('orderDetails.downloadInvoice')}</span>
-          </button>
-        </div>
+        <OrderActionButtons
+          apiOrder={apiOrder}
+          isRepeating={isRepeating}
+          downloadSuccess={downloadSuccess}
+          onRepeatOrder={handleRepeatOrder}
+          onDownloadInvoice={handleDownloadInvoice}
+        />
       </div>
 
       {/* Help Alert Modal */}
-      {showHelpAlert && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4"
-          onClick={() => setShowHelpAlert(false)}
-        >
-          <div
-            className="bg-white rounded-3xl max-w-xs w-full p-5 text-center space-y-3 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-12 h-12 rounded-full bg-[#e8f5e9] text-[#1b5e20] flex items-center justify-center mx-auto">
-              <Phone size={22} />
-            </div>
-            <h3 className="font-bold text-base text-[#1b1c1c]">{t('orderDetails.support')}</h3>
-            <p className="text-xs text-[#525e54]">
-              {t('orderDetails.supportDesc', { id: order.id })}
-            </p>
-            {contactNumbers.length > 0 ? (
-              contactList
-            ) : (
-              <div className="bg-[#f0eded] rounded-xl p-2.5 font-bold text-xs text-[#00450d]">
-                {t('orderDetails.helpline')}
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowHelpAlert(false)}
-              className="w-full bg-[#00450d] text-white font-bold py-2 rounded-xl text-xs"
-            >
-              {t('common.close')}
-            </button>
-          </div>
-        </div>
-      )}
+      <OrderHelpModal
+        isOpen={showHelpAlert}
+        orderId={order.id}
+        contactNumbers={contactNumbers}
+        onClose={() => setShowHelpAlert(false)}
+      />
     </div>
   );
 };

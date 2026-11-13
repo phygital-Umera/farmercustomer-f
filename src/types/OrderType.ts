@@ -184,6 +184,8 @@ export interface ApiOrder {
   orderType?: 'NORMAL' | 'PREORDER' | string;
   scheduledAt?: string | null;
   note?: string | null;
+  confirmedAt?: string | null;
+  confirmationNote?: string | null;
   address?: any;
 }
 
